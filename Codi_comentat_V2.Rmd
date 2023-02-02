@@ -1,0 +1,364 @@
+---
+title: "Illes'n'Dades"
+author: "JV Cladera"
+date: "2022-10-07"
+output: html_document
+---
+
+*Molt modificat!* Aqui domés hi ha el necessari per a l'obtenció de les metadates.
+
+# Coses a fer
+
+1.  Generalitzar de PALMA a totes les dades *en procés (fet!)*
+
+2.  Canviar els print per cat o glue
+
+3.  Millorar el cercador fer-ho per:
+
+    1.  Any
+
+    2.  bbdd
+
+    3.  Municipi
+
+    4.  Variables
+
+4.  Fer una matrix que contengui tota la meta informació. **Cal crear un doc_metadata_util que reculli tota la info!!!**
+
+# Introducció
+
+L'objectiu d'aquest codi és recollir les bases de dades disponibles a la pàgina web de l'IBESTAT. (Codi local)
+
+A continuació, es vol conèixer les metadades dels diferents conjunts de dades descarregats, de moment no les dades en sí, per poder crear un cercador de la base de dades (bbdd). (Codi local)
+
+Aquest cercador de metadades ha de ser per any i bbdd. Un cop seleccionada una o diverses bbdd s'han de poder descarregar d'internet i ser obertes fàcilment. (Paquet + Shiny)
+
+A continuació es vol dur a terme una eina interactiva (Shiny) que grafiqui les bases de dades. Inicialment d'una amb una i després en conjunt. O sigui, que una mateixa variable recollida en diverses bbdd pugi ser estudiada fàcilment.
+
+També serà necessari dur a terme una eina (Paquet + Shiny) que combini de manera inteligent les dades.
+
+## Organització fitxer
+
+Per facilitar-mos la feina, crearem sempre el mateix format de carpetes
+
+-   Dia: el dia que es va llegir el codi al web en format "dd_mm_aa". En aquesta es guarden tots els fitxers necessaris per exacutar el codi llevat del codi mateix.
+
+    -   Carpeta PX: On es guarden els arxius .px
+
+    -   Carpeta CSV: On es guarden els arxius .csv
+
+    -   links_descarregar.csv
+
+    -   doc_metadata_links.csv
+
+# Prerequisits
+
+## Paquets necessaris
+
+```{r setup}
+INICI <- Sys.time()
+library("rvest")
+library("stringr")
+library("tidyverse")
+library("pxR")
+# library("readr") crec quen esta a tidyverse
+# library(lubridate)
+# library(treemap)
+# library(ggplot2)
+source("functions_metadades.R")
+# source("web_scraping.R")
+```
+
+## Carpetes
+
+**Recordatori: domés funciona amb Windows**
+
+```{r}
+dia <- "28_11_22" # Nom de la carpeta on es guardarà
+directori <- paste0("D:/00_PseudoEsciptori/Illesndades/Arxius/", dia)
+
+if (file.exists(directori)) {
+  print("Les dades es guardaran a la subcarpeta:")
+  print(directori)
+} else {
+  dir.create(directori, showWarnings = TRUE, recursive = FALSE, mode = "0777")
+  print("Es crea una carpeta on es guardaran les dades amb el nom:")
+  print(directori)
+}
+```
+
+# Web Scraping a la pagina web de l'IBESTAT
+
+Per començar, cal trobar tots els links de descarrega de les bases de dades. Per fer-ho fet web scraping a la pàgina de l'ibestat manyalment i després s'usa el paquet *rvest*. S'agafa el codi de la pagina, es selecciona tots els links que contenen els fitxer .px i es preparen els links per que es puguin descarregar fàcilment. Això ho he fet al fitxer *web_scraping.R* i he creat un arxiu CSV anomenat links_descarregar.
+
+```{r web_scraping}
+# fet a web_scraping.R
+```
+
+Cream un arxiu csv que conté el links i el nom de la bbdd. Aquest fitxer es diu **links_descarregar.csv**
+
+```{r preparar_arxius}
+links_descarregar <- read.csv("links_descarregar.csv")
+```
+
+***CODI PER NO HAVER DE COMPILAR PER LES 22280 bbdd sinó per n***
+
+```{r subdataset}
+#set.seed(142)
+#links_descarregar<-links_descarregar[sample(nrow(links_descarregar), 10, replace = FALSE),]
+
+nrow(links_descarregar)
+```
+
+### *descarregar.px()*
+
+A continuació es crea una funció, *descarregar.px(),* que permet descarregar els links en format .px. Aquesta funció crea la carpeta PX si no està creada, intenta descarregar les dades i si no pot guarda els errors.
+
+-   Els inputs de la funció són: la bbdd amb els links de descarrega i el directori on es guarda la info.
+
+-   Els outputs són els links que no ha pogut descarregar.
+
+No emprar pq és molt més eficient fet-ho online.
+
+```{r message=FALSE, warning=FALSE}
+# descarregar.px(links_descarregar, directori)
+```
+
+# Recollir la metainformació
+
+Mitjançant la funció llegir.px.csv.i.metadades.fast es descarreguen les bases de dades i es recolleix metainfo en un fitxer, es lent....
+
+```{r PACIENCIA, message=FALSE, warning=FALSE}
+
+setwd(paste0(directori, "/"))
+n_subset <- 1000
+
+inici <- Sys.time()
+for (i in 1:ceiling(nrow(links_descarregar)/n_subset)) {
+  
+  links_mini <- links_descarregar[(i*n_subset-(n_subset-1)):(i*n_subset),]
+  
+  DADES <- llegir.px.csv.i.metadades.fast(links_mini)
+  
+  write(DADES$errors$error_lectura_px, paste0("error_lectura_px_", i, ".txt"))
+  write(DADES$errors$error_lectura_df, paste0("error_lectura_df_", i, ".txt"))
+  
+  write.csv(DADES$doc_metadata_util, paste0("doc_metadata_util_", i, ".csv"), fileEncoding = "UTF-8")
+  print(paste0("Feta la partició: ", i))
+}
+fi <- Sys.time()
+fi-inici
+
+doc_metadata_util <- tibble()
+for (i in 1:ceiling(nrow(links_descarregar)/n_subset)) {
+  print(i)
+  
+  doc_metadata_util <- tibble( 
+    merge(
+      doc_metadata_util,
+      read.csv(paste0("doc_metadata_util_", i, ".csv"), fileEncoding = "UTF-8"),
+      all = TRUE
+    )
+  )
+}
+
+
+doc_metadata_util <- DADES$doc_metadata_util
+
+nrow(unique(doc_metadata_util))
+
+```
+
+## Seleccionar i millorar columnes per a la recerca
+
+A continuació el que es fa es seleccionar les columnes més important de doc_metadata_util. I es crea el fitxer **doc_metadata_links.csv** que a més conté els links de descarrega, el que permetra fer el cercador i baixar les dades online.
+
+```{r metadata_links}
+var_distintives <- c("CONTENTS", "CONTENTS.ca.", "CREATION.DATE", "DESCRIPTION", "DESCRIPTION.ca.", "INFO", "INFO.ca.", "MATRIX", "REFPERIOD", "REFPERIOD.ca.", "SUBJECT.AREA" , "SUBJECT.AREA.ca.", "SUBJECT.CODE", "SURVEY", "SURVEY.ca.", "TITLE", "TITLE.ca.")
+
+doc_metadata_mini <- doc_metadata_util[var_distintives]
+
+links_descarregar <- links_descarregar[,-1]
+
+names(links_descarregar) <- c("Titol_cat", "Enllac", "MATRIX" )
+
+# hi ha un parell de BBDD que canvien sutilment el nom, es corregeix: hi ha massa dades per fer-ho!
+# links_descarregar[links_descarregar[,3]== "u204004_p001",3] <- c("U204004_p001")
+# links_descarregar[links_descarregar[,3]== "u204004_0001",3] <- c("U204004_0001")
+# links_descarregar[links_descarregar[,3]== "u204004_0002",3] <- c("U204004_0002")
+
+doc_metadata_links <- full_join(links_descarregar, doc_metadata_mini, by="MATRIX")
+
+# Es crea una fila duplicada i no se pq, l'elimin
+doc_metadata_links <- unique(doc_metadata_links)
+```
+
+Tot seguit crea un fitxer que es doc_metadata_links_2.csv on llev els "\\n" dividesc millor certes columnes per millorar el cercador. i ho guard, com **doc_metadata_links.csv**
+
+```{r metadata_links_noves_col_PACIENCIA}
+#eliminar /n i posar coses guapes
+doc_metadata_links_2 <- doc_metadata_links
+for (i in 1:nrow(doc_metadata_links)) {
+  for (j in 1:ncol(doc_metadata_links)) {
+    doc_metadata_links_2[i , j] <-  str_remove_all(doc_metadata_links[i , j], '"\n"')
+  }
+}
+
+doc_metadata_links_2_parcial <- doc_metadata_links_2[,"MATRIX"]
+doc_metadata_links_2_parcial <- as.data.frame(doc_metadata_links_2_parcial)
+
+for (i in 1:nrow(doc_metadata_links_2)) {
+  parte <- str_split(doc_metadata_links_2[i , "SUBJECT.AREA"], " > ")
+  doc_metadata_links_2_parcial[i, 2] <- parte[[1]][1]
+  doc_metadata_links_2_parcial[i, 3] <- parte[[1]][2]
+  part <- str_split(doc_metadata_links_2[i , "SUBJECT.AREA.ca."], " > ")
+  doc_metadata_links_2_parcial[i, 4] <- part[[1]][1]
+  doc_metadata_links_2_parcial[i, 5] <- part[[1]][2]
+  nombre <- str_split(as.character(doc_metadata_links_2[i , "SUBJECT.CODE"]), '\\.')
+  doc_metadata_links_2_parcial[i, 6] <- nombre[[1]][1]
+  doc_metadata_links_2_parcial[i, 7] <- nombre[[1]][2]
+}
+
+names(doc_metadata_links_2_parcial) <- c("MATRIX", "SUBJECT.AREA.1", "SUBJECT.AREA.2", "SUBJECT.AREA.ca.1", "SUBJECT.AREA.ca.2", "SUBJECT.CODE.1", "SUBJECT.CODE.2")
+
+doc_metadata_links_2 <- full_join(doc_metadata_links_2, doc_metadata_links_2_parcial, by="MATRIX")
+
+setwd(paste0(directori, "/"))
+write.csv(doc_metadata_links_2, "doc_metadata_links.csv", fileEncoding = "UTF-8")
+```
+
+ja es farà!
+
+# Dates
+
+***Revisar codi!!!***
+
+    setwd(directori)
+    meta_links <- read_csv(paste0(directori, "/doc_metadata_links.csv"), locale = locale(encoding = "UTF-8"))
+    meta_links <- meta_links[,-1]
+    meta_links <-as_tibble(meta_links)
+
+    # posar_dates_PACIENCIA
+    # meta_prova df temporal on fer les modificacions 
+
+    meta_prova <- meta_links[,c("MATRIX")]
+    meta_prova[, 2] <- meta_links[,c("REFPERIOD")]
+    meta_prova[, 3] <- meta_links[,c("REFPERIOD")]
+    meta_prova[, 4] <- meta_links[,c("INFO")]
+
+    names(meta_prova)<- c("MATRIX", "REFPERIOD", "mod_1", "INFO.rm")
+
+    # bulce per detectar si a INFO.rm hi ha nombres,  sii REFPERIOD esta buid i posar-ho a mod_1
+    for (i in 1:nrow(meta_links)) {
+      if(is.na(meta_prova[i, "REFPERIOD"]) == T){
+        if(is.na(str_detect(meta_prova[i, 4], "[0-9]")) == F){
+          if(str_detect(meta_prova[i, 4], "[0-9]") == T){
+            meta_prova[i, 3] <- meta_prova[i, 4]
+          }
+        }
+      }
+    }
+
+    # bulce per detectar si a INFO.rm hi ha "Elecciones",  sii REFPERIOD esta buid i posar a mod_1 els dos darres valors del nom de MATRIX
+
+    for (i in 1:nrow(meta_links)) {
+      if(is.na(meta_prova[i, "REFPERIOD"]) == T){
+        if(is.na(str_detect(meta_prova[i, 4], "Elecciones")) == F){
+          if(str_detect(meta_prova[i, 4], "Elecciones") == T){
+            meta_prova[i, 3] <- paste0("19", str_sub(meta_prova[i, 1], -2))
+          }
+        }
+      }
+    }
+
+
+
+    # bucle per eliminar tot allò que no volem i deixar unicament les dates
+    for (i in 1:nrow(meta_links)) {
+      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Revisión del padrón ")
+      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Migraciones ")
+      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Partos ")
+      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Matrimonios ")
+      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Defunciones ")
+      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Migraciones ")
+      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], '01/01/')
+      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], '01/11/')
+      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], '11/01/')
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "a 2008", "2008")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " primer trimestre", "T1")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " segundo trimestre", "T2")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " tercert trimestre", "T3")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " cuarto trimestre", "T4")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " enero de ", " 01/")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " febrero de ", " 02/")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " marzo de ", " 03/")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " abril de ", " 04/")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " mayo de ", " 05/")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " junio de ", " 06/")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " julio de ", " 07/")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " agosto de ", " 08/")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " setimbre de ", " 09/")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " octubre de ", " 10/")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " noviembre de ", " 11/")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " diciembre de ", " 12/")
+      #
+      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Censo ")
+      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Nacimientos ")
+      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Elecciones Autonómicas ")
+      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Elecciones al Parlamento Europeo ")
+      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Elecciones Municipales ")
+      #
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1919", "2019")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1915", "2015")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1911", "2011")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1907", "2007")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1903", "2003")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1916", "2016")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1908", "2008")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1904", "2004")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1900", "2000")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1914", "2014")
+      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1909", "2009")
+      if(is.na(str_detect(meta_prova[i, 3], "19dd")) == F && str_detect(meta_prova[i, 3], "19dd") == T) meta_prova[i, 3] <- NA
+      if(is.na(str_detect(meta_prova[i, 3], "19dd")) == F && str_detect(meta_prova[i, 3], "19ev") == T) meta_prova[i, 3] <- NA
+      if(is.na(str_detect(meta_prova[i, 3], "19dd")) == F && str_detect(meta_prova[i, 3], "19x9") == T) meta_prova[i, 3] <- NA
+    }
+
+    # posar_dates_2
+    meta_prova[, 4] <- meta_prova[, 3] # matxacam el INFO.rm
+
+    # bucle per posar si la bd es mensual o trimestral
+    for (i in 1:nrow(meta_links)) {
+      if(is.na(meta_prova[i, 3])==T) next
+      if(str_detect(meta_prova[i, 4], '/')) meta_prova[i, 4] <- "Mensual"
+      if(str_detect(meta_prova[i, 4], "M")) meta_prova[i, 4] <- "Mensual"
+      if(str_detect(meta_prova[i, 4], "T")) meta_prova[i, 4] <- "Trimestral"
+    }
+
+    # bucle per posar si la bd es anual
+    for (i in 1:nrow(meta_links)) {
+      if(is.na(meta_prova[i, 4]) ==T) next
+      if((meta_prova[i, 4] =="Mensual") == T ) next
+      if((meta_prova[i, 4] =="Trimestral") == T ) next
+      if(str_detect(meta_prova[i, 3], 'e')) meta_prova[i, 4] <- "Anual"
+    }
+
+    meta_prova <- meta_prova[,-c(2,3)]
+    names(meta_prova) <- c("MATRIX", "data.1")
+
+    meta_links_dates <- inner_join(meta_links, meta_prova) 
+
+    #colSums(is.na(meta_links_dates))
+
+    setwd(paste0(directori, "/"))
+    write.csv(meta_links_dates, "meta_links_dates.csv", fileEncoding = "UTF-8" )
+
+    ###
+    # Queda fer que les dades anuals, trimestrals i mensuals diguin de quins anys són
+    # Tmb hi ha dades que tal vegada es pugui esbirnar l'any mirant el titol o les dades en si. no prioritari pq n'hi ha poques
+    ###
+
+```{r}
+FINAL <- Sys.time()
+FINAL-INICI
+```
