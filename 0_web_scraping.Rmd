@@ -1,6 +1,6 @@
 ---
 title: "Web scraping"
-author: "JV"
+author: "Illes & Dades"
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -9,7 +9,7 @@ output: html_document
 START <- Sys.time()
 ```
 
-```{r warning=FALSE}
+```{r message=FALSE, warning=FALSE}
 library(readr)
 library(stringr)
 library(rvest)
@@ -22,7 +22,7 @@ directory <- getwd()
 
 In IBestat.txt there are multiple links obtained by "manual" web scraping. To obtain all the links to data sets we have to use the function read.ibesat.links that create a data frame whit them. This will save all links ended like ".px" a kind of archive that store data and metadata and the name of the data set. 
 
-```{r warning=FALSE}
+```{r message=FALSE, warning=FALSE}
 
 # a IBestat.txt hi ha els links on hi ha mes links per descarregar les bbdd.
 links_ibestat <- read_csv("Data/IBestat.txt")
@@ -31,8 +31,8 @@ links_ibestat <- as.data.frame(links_ibestat)
 
 # funció de lectura dels links, hi hem d'introduir unicament els links en format df
 
-#links_to_download <- read.ibestat.links(links_ibestat)
-links_to_download <- lectura.links.ibestat(links_ibestat)
+links_to_download <- read.ibestat.links(links_ibestat)
+
 
 write.csv(
   links_to_download,

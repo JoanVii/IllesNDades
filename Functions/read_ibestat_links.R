@@ -10,7 +10,9 @@ read.ibestat.links <- function(links_ibestat){
     links_all <- as.data.frame(links_messy %>% html_attr("title"))
     links_all[,2] <- as.data.frame(links_messy %>% html_attr("href"))
     
-    links_to_download<-links_all[str_ends(links_all[,2], ".px"),]
+    links_to_download_mini<-links_all[str_ends(links_all[,2], ".px"),]
+    
+    links_to_download <-merge(links_to_download, links_to_download_mini, all = TRUE)
   }
   
   links_to_download <- links_to_download[!is.na(links_to_download[, 2]), ]
@@ -18,6 +20,7 @@ read.ibestat.links <- function(links_ibestat){
   # getting the urls whit possible data:
   
   for (i in 1:nrow(links_to_download)) {
+    
     position <- str_locate_all(links_to_download[i,2], "/")
     position_name_ddbb <- position[[1]][[nrow(position[[1]]), 1]]
     position_link <- position[[1]][[nrow(position[[1]])-2, 1]]

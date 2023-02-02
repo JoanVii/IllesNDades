@@ -9,7 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="JV" />
+<meta name="author" content="Illes &amp; Dades" />
 
 <meta name="date" content="2023-02-02" />
 
@@ -353,7 +353,7 @@ display: none;
 
 
 <h1 class="title toc-ignore">Web scraping</h1>
-<h4 class="author">JV</h4>
+<h4 class="author">Illes &amp; Dades</h4>
 <h4 class="date">2023-02-02</h4>
 
 </div>
@@ -361,79 +361,26 @@ display: none;
 
 <pre class="r"><code>library(readr)
 library(stringr)
-library(rvest)</code></pre>
-<pre><code>## 
-## Attaching package: &#39;rvest&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:readr&#39;:
-## 
-##     guess_encoding</code></pre>
-<pre class="r"><code>library(tibble)
+library(rvest)
+library(tibble)
 
 source(&quot;Functions/read_ibestat_links.R&quot;)
 
 directory &lt;- getwd()</code></pre>
-<pre class="r"><code>lectura.links.ibestat &lt;- function(links_ibestat_df){
-  
-  links_descarregar_all &lt;- tibble()
-  
-  # clean HTML code from multiple urls:
-  
-  for (i in 1:nrow(links_ibestat_df)) {
-    links_brut &lt;- read_html(links_ibestat_df[i,]) %&gt;% html_nodes(&quot;a&quot;)
-    
-    links_tots &lt;- as.data.frame(links_brut %&gt;% html_attr(&quot;title&quot;))
-    links_tots[,2] &lt;- as.data.frame(links_brut %&gt;% html_attr(&quot;href&quot;))
-    
-    links_descarregar_all&lt;-links_tots[str_ends(links_tots[,2], &quot;.px&quot;),]
-  }
-  
-  links_descarregar_all &lt;- links_descarregar_all[!is.na(links_descarregar_all[, 2]), ]
-  
-  # getting the urls whit possible data:
-  
-  for (i in 1:nrow(links_descarregar_all)) {
-    posicio &lt;- str_locate_all(links_descarregar_all[i,2], &quot;/&quot;)
-    posicio_nombbdd &lt;- posicio[[1]][[nrow(posicio[[1]]), 1]]
-    posicio_link &lt;- posicio[[1]][[nrow(posicio[[1]])-2, 1]]
-    
-    # create link
-    links_descarregar_all[i,3] &lt;- str_c(
-      &quot;https://ibestat.caib.es/ibestat/service/ibestat/pxcontent&quot;,
-      str_replace(str_sub(links_descarregar_all[i,2], start=posicio_link), &quot;/es/&quot;, &quot;/&quot;)
-    )
-    
-    # create name of ddbb
-    links_descarregar_all[i,4] &lt;- str_sub(links_descarregar_all[i,2], start=posicio_nombbdd+1, end= -4)
-    
-  }
-
-  links_descarregar&lt;-as_tibble(links_descarregar_all)
-  names(links_descarregar) &lt;- c(&quot;Titol_cat&quot;, &quot;Eliminar&quot;, &quot;Enllac&quot;, &quot;Nom_BBDD&quot;)
-  links_descarregar &lt;- links_descarregar[,c(&quot;Titol_cat&quot;, &quot;Enllac&quot;, &quot;Nom_BBDD&quot;)]
-  
-  return(links_descarregar)
-}</code></pre>
 <p>In IBestat.txt there are multiple links obtained by “manual” web
 scraping. To obtain all the links to data sets we have to use the
 function read.ibesat.links that create a data frame whit them. This will
 save all links ended like “.px” a kind of archive that store data and
 metadata and the name of the data set.</p>
 <pre class="r"><code># a IBestat.txt hi ha els links on hi ha mes links per descarregar les bbdd.
-links_ibestat &lt;- read_csv(&quot;Data/IBestat.txt&quot;)</code></pre>
-<pre><code>## Rows: 322 Columns: 1</code></pre>
-<pre><code>## -- Column specification --------------------------------------------------------
-## Delimiter: &quot;,&quot;
-## chr (1): Links:</code></pre>
-<pre><code>## 
-## i Use `spec()` to retrieve the full column specification for this data.
-## i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code>links_ibestat &lt;- links_ibestat[str_detect(links_ibestat$&quot;Links:&quot;, &quot;https&quot;), ]
+links_ibestat &lt;- read_csv(&quot;Data/IBestat.txt&quot;)
+links_ibestat &lt;- links_ibestat[str_detect(links_ibestat$&quot;Links:&quot;, &quot;https&quot;), ]
 links_ibestat &lt;- as.data.frame(links_ibestat)
 
 # funció de lectura dels links, hi hem d&#39;introduir unicament els links en format df
 
-#links_to_download &lt;- read.ibestat.links(links_ibestat)
-links_to_download &lt;- lectura.links.ibestat(links_ibestat)
+links_to_download &lt;- read.ibestat.links(links_ibestat)
+
 
 write.csv(
   links_to_download,
@@ -441,6 +388,7 @@ write.csv(
   fileEncoding = &quot;UTF-8&quot;
 )</code></pre>
 <p>Time to execute this code:</p>
+<pre><code>## Time difference of 3.155061 mins</code></pre>
 
 
 

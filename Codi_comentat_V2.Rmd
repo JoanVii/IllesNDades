@@ -104,8 +104,8 @@ links_descarregar <- read.csv("links_descarregar.csv")
 ***CODI PER NO HAVER DE COMPILAR PER LES 22280 bbdd sinó per n***
 
 ```{r subdataset}
-#set.seed(142)
-#links_descarregar<-links_descarregar[sample(nrow(links_descarregar), 10, replace = FALSE),]
+set.seed(142)
+links_descarregar<-links_descarregar[sample(nrow(links_descarregar), 1500, replace = FALSE),]
 
 nrow(links_descarregar)
 ```
@@ -227,136 +227,6 @@ setwd(paste0(directori, "/"))
 write.csv(doc_metadata_links_2, "doc_metadata_links.csv", fileEncoding = "UTF-8")
 ```
 
-ja es farà!
-
-# Dates
-
-***Revisar codi!!!***
-
-    setwd(directori)
-    meta_links <- read_csv(paste0(directori, "/doc_metadata_links.csv"), locale = locale(encoding = "UTF-8"))
-    meta_links <- meta_links[,-1]
-    meta_links <-as_tibble(meta_links)
-
-    # posar_dates_PACIENCIA
-    # meta_prova df temporal on fer les modificacions 
-
-    meta_prova <- meta_links[,c("MATRIX")]
-    meta_prova[, 2] <- meta_links[,c("REFPERIOD")]
-    meta_prova[, 3] <- meta_links[,c("REFPERIOD")]
-    meta_prova[, 4] <- meta_links[,c("INFO")]
-
-    names(meta_prova)<- c("MATRIX", "REFPERIOD", "mod_1", "INFO.rm")
-
-    # bulce per detectar si a INFO.rm hi ha nombres,  sii REFPERIOD esta buid i posar-ho a mod_1
-    for (i in 1:nrow(meta_links)) {
-      if(is.na(meta_prova[i, "REFPERIOD"]) == T){
-        if(is.na(str_detect(meta_prova[i, 4], "[0-9]")) == F){
-          if(str_detect(meta_prova[i, 4], "[0-9]") == T){
-            meta_prova[i, 3] <- meta_prova[i, 4]
-          }
-        }
-      }
-    }
-
-    # bulce per detectar si a INFO.rm hi ha "Elecciones",  sii REFPERIOD esta buid i posar a mod_1 els dos darres valors del nom de MATRIX
-
-    for (i in 1:nrow(meta_links)) {
-      if(is.na(meta_prova[i, "REFPERIOD"]) == T){
-        if(is.na(str_detect(meta_prova[i, 4], "Elecciones")) == F){
-          if(str_detect(meta_prova[i, 4], "Elecciones") == T){
-            meta_prova[i, 3] <- paste0("19", str_sub(meta_prova[i, 1], -2))
-          }
-        }
-      }
-    }
-
-
-
-    # bucle per eliminar tot allò que no volem i deixar unicament les dates
-    for (i in 1:nrow(meta_links)) {
-      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Revisión del padrón ")
-      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Migraciones ")
-      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Partos ")
-      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Matrimonios ")
-      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Defunciones ")
-      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Migraciones ")
-      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], '01/01/')
-      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], '01/11/')
-      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], '11/01/')
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "a 2008", "2008")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " primer trimestre", "T1")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " segundo trimestre", "T2")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " tercert trimestre", "T3")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " cuarto trimestre", "T4")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " enero de ", " 01/")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " febrero de ", " 02/")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " marzo de ", " 03/")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " abril de ", " 04/")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " mayo de ", " 05/")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " junio de ", " 06/")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " julio de ", " 07/")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " agosto de ", " 08/")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " setimbre de ", " 09/")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " octubre de ", " 10/")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " noviembre de ", " 11/")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], " diciembre de ", " 12/")
-      #
-      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Censo ")
-      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Nacimientos ")
-      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Elecciones Autonómicas ")
-      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Elecciones al Parlamento Europeo ")
-      meta_prova[i, 3] <- str_remove_all(meta_prova[i, 3], "Elecciones Municipales ")
-      #
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1919", "2019")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1915", "2015")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1911", "2011")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1907", "2007")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1903", "2003")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1916", "2016")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1908", "2008")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1904", "2004")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1900", "2000")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1914", "2014")
-      meta_prova[i, 3] <- str_replace_all(meta_prova[i, 3], "1909", "2009")
-      if(is.na(str_detect(meta_prova[i, 3], "19dd")) == F && str_detect(meta_prova[i, 3], "19dd") == T) meta_prova[i, 3] <- NA
-      if(is.na(str_detect(meta_prova[i, 3], "19dd")) == F && str_detect(meta_prova[i, 3], "19ev") == T) meta_prova[i, 3] <- NA
-      if(is.na(str_detect(meta_prova[i, 3], "19dd")) == F && str_detect(meta_prova[i, 3], "19x9") == T) meta_prova[i, 3] <- NA
-    }
-
-    # posar_dates_2
-    meta_prova[, 4] <- meta_prova[, 3] # matxacam el INFO.rm
-
-    # bucle per posar si la bd es mensual o trimestral
-    for (i in 1:nrow(meta_links)) {
-      if(is.na(meta_prova[i, 3])==T) next
-      if(str_detect(meta_prova[i, 4], '/')) meta_prova[i, 4] <- "Mensual"
-      if(str_detect(meta_prova[i, 4], "M")) meta_prova[i, 4] <- "Mensual"
-      if(str_detect(meta_prova[i, 4], "T")) meta_prova[i, 4] <- "Trimestral"
-    }
-
-    # bucle per posar si la bd es anual
-    for (i in 1:nrow(meta_links)) {
-      if(is.na(meta_prova[i, 4]) ==T) next
-      if((meta_prova[i, 4] =="Mensual") == T ) next
-      if((meta_prova[i, 4] =="Trimestral") == T ) next
-      if(str_detect(meta_prova[i, 3], 'e')) meta_prova[i, 4] <- "Anual"
-    }
-
-    meta_prova <- meta_prova[,-c(2,3)]
-    names(meta_prova) <- c("MATRIX", "data.1")
-
-    meta_links_dates <- inner_join(meta_links, meta_prova) 
-
-    #colSums(is.na(meta_links_dates))
-
-    setwd(paste0(directori, "/"))
-    write.csv(meta_links_dates, "meta_links_dates.csv", fileEncoding = "UTF-8" )
-
-    ###
-    # Queda fer que les dades anuals, trimestrals i mensuals diguin de quins anys són
-    # Tmb hi ha dades que tal vegada es pugui esbirnar l'any mirant el titol o les dades en si. no prioritari pq n'hi ha poques
-    ###
 
 ```{r}
 FINAL <- Sys.time()
