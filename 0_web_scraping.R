@@ -54,8 +54,6 @@ links_ibestat_df <- as.data.frame(links_ibestat_df)
 
 links_descarregar <- lectura.links.ibestat(links_ibestat_df)
 
-View(links_descarregar_tibble)
-
 directori <- getwd()
 
 write.csv(
