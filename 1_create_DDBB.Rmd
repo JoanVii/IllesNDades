@@ -20,10 +20,9 @@ library("stringr")
 library("tidyverse")
 library("pxR")
 
-source("functions_metadades.R") # we use: 
-# source("Functions/llegir_px_csv_i_metadades_fast.R")
+# source("functions_metadades.R") 
+source("Functions/llegir_px_csv_i_metadades_fast.R")
 directory <- getwd()
-
 ```
 
 # Web Scraping a la pagina web de l'IBESTAT
@@ -37,81 +36,79 @@ Per començar, cal trobar tots els links de descarrega de les bases de dades. Pe
 Cream un arxiu csv que conté el links i el nom de la bbdd. Aquest fitxer es diu **links_to_download.csv**
 
 ```{r preparar_arxius}
-# links_descarregar <- read.csv("links_descarregar.csv")
-getwd()
 links_to_download <- read.csv("Data/links_to_download.csv")
-
 
 # canvis de noms de variables i mes:
 # links_to_download <- links_descarregar
 # directory <- directori
 # metadata_### <- doc_metadata_####
+# key_var <- var_distintives
+# metadata_links_2 <- metadata_links_clean
+# metadata_raw <- metadata_util
 
 ```
 
 ***CODI PER NO HAVER DE COMPILAR PER LES 22280 bbdd sinó per n***
 
-```{r subdataset}
+```{r subdataset, eval=FALSE, include=FALSE}
 set.seed(142)
-links_to_download<-links_to_download[sample(nrow(links_to_download), 1500, replace = FALSE),]
+links_to_download<-links_to_download[sample(nrow(links_to_download), 30, replace = FALSE),]
 
 nrow(links_to_download)
 ```
 
+# Maneig BBDD
 
 ```{r PACIENCIA, message=FALSE, warning=FALSE}
-
 setwd(paste0(directory, "/Data/"))
-n_subset <- 1000
+
+n_subset <- 10000
 partitions <- ceiling(nrow(links_to_download)/n_subset)
 
-
-inici <- Sys.time()
-
+# reading the metadata from multiple DDBB, do it whit partitions cause it's easy to debug
 for (i in 1:partitions) {
   
   links_mini <- links_to_download[(i*n_subset-(n_subset-1)):(i*n_subset),]
   
   DADES <- llegir.px.csv.i.metadades.fast(links_mini)
   
-  write(DADES$errors$error_lectura_px, paste0("error_lectura_px_", i, ".txt"))
-  write(DADES$errors$error_lectura_df, paste0("error_lectura_df_", i, ".txt"))
+  # write(DADES$errors$error_lectura_px, paste0("error_lectura_px_", i, ".txt"))
+  # write(DADES$errors$error_lectura_df, paste0("error_lectura_df_", i, ".txt"))
   
-  write.csv(DADES$metadata_util, paste0("metadata_util_", i, ".csv"), fileEncoding = "UTF-8")
-  print(paste0("Feta la partició: ", i, " de ", partitions, "."))
+  write.csv(DADES$doc_metadata_util, paste0("metadata_raw_", i, ".csv"), fileEncoding = "UTF-8")
+  # print(paste0("Feta la partició: ", i))
 }
-fi <- Sys.time()
-fi-inici
 
-metadata_util <- tibble()
-setwd(paste0(directory, "/Data/"))
-getwd()
-for (i in 1:partitions) {
- 
-  metadata_util <- tibble( 
-    merge(
-      metadata_util,
-      read.csv(paste0("metadata_util_", i, ".csv"), fileEncoding = "UTF-8"),
-      all = TRUE
+metadata_raw <- tibble(read.csv(paste0("metadata_raw_1.csv"), fileEncoding = "UTF-8"))
+
+if(partitions>1){
+  for (i in 2:partitions) {
+    metadata_raw <- tibble( 
+      merge(
+        metadata_raw,
+        read.csv(paste0("metadata_raw_", i, ".csv"), fileEncoding = "UTF-8"),
+        all = TRUE
+      )
     )
-  )
+  }
 }
 
+for (i in 1:partitions){
+  file.remove(paste0("metadata_raw_", i, ".csv"))
+}
 
-metadata_util <- DADES$metadata_util
-
-print(paste0("nrow: ", nrow(unique(metadata_util))))
+print(paste0("nrow: ", nrow(unique(metadata_raw))))
 
 ```
 
 ## Seleccionar i millorar columnes per a la recerca
 
-A continuació el que es fa es seleccionar les columnes més important de metadata_util. I es crea el fitxer **metadata_links.csv** que a més conté els links de descarrega, el que permetra fer el cercador i baixar les dades online.
+A continuació el que es fa es seleccionar les columnes més important de metadata_raw. I es crea el fitxer **metadata_links.csv** que a més conté els links de descarrega, el que permetra fer el cercador i baixar les dades online.
 
-```{r metadata_links}
-var_distintives <- c("CONTENTS", "CONTENTS.ca.", "CREATION.DATE", "DESCRIPTION", "DESCRIPTION.ca.", "INFO", "INFO.ca.", "MATRIX", "REFPERIOD", "REFPERIOD.ca.", "SUBJECT.AREA" , "SUBJECT.AREA.ca.", "SUBJECT.CODE", "SURVEY", "SURVEY.ca.", "TITLE", "TITLE.ca.")
+```{r metadata_links_0}
+key_var <- c("CONTENTS", "CONTENTS.ca.", "CREATION.DATE", "DESCRIPTION", "DESCRIPTION.ca.", "INFO", "INFO.ca.", "MATRIX", "REFPERIOD", "REFPERIOD.ca.", "SUBJECT.AREA" , "SUBJECT.AREA.ca.", "SUBJECT.CODE", "SURVEY", "SURVEY.ca.", "TITLE", "TITLE.ca.")
 
-metadata_mini <- metadata_util[var_distintives]
+metadata_mini <- metadata_raw[key_var]
 
 links_to_download <- links_to_download[,-1]
 
@@ -123,41 +120,52 @@ metadata_links <- full_join(links_to_download, metadata_mini, by="MATRIX")
 metadata_links <- unique(metadata_links)
 ```
 
-Tot seguit crea un fitxer que es metadata_links_2.csv on llev els "\\n" dividesc millor certes columnes per millorar el cercador. i ho guard, com **metadata_links.csv**
+Tot seguit crea un fitxer que es metadata_links_clean.csv on llev els "\\n" dividesc millor certes columnes per millorar el cercador. i ho guard, com **metadata_links.csv**
 
-```{r metadata_links_noves_col_PACIENCIA}
-#eliminar /n i posar coses guapes
+```{r metadata_links_noves_col_PACIENCIA_0}
+#delate /n & creating easy way to navegate the data
 
-metadata_links_2 <- metadata_links
+setwd(paste0(directory, "/Data/"))
+
+
+metadata_links_clean <- metadata_links
 for (i in 1:nrow(metadata_links)) {
   for (j in 1:ncol(metadata_links)) {
-    metadata_links_2[i , j] <-  str_remove_all(metadata_links[i , j], '"\n"')
+    metadata_links_clean[i , j] <-  str_remove_all(metadata_links[i , j], '"\n"')
   }
 }
 
-metadata_links_2_parcial <- metadata_links_2[,"MATRIX"]
-metadata_links_2_parcial <- as.data.frame(metadata_links_2_parcial)
+metadata_links_clean_parcial <- metadata_links_clean[,"MATRIX"]
+metadata_links_clean_parcial <- as.data.frame(metadata_links_clean_parcial)
 
-for (i in 1:nrow(metadata_links_2)) {
-  parte <- str_split(metadata_links_2[i , "SUBJECT.AREA"], " > ")
-  metadata_links_2_parcial[i, 2] <- parte[[1]][1]
-  metadata_links_2_parcial[i, 3] <- parte[[1]][2]
+for (i in 1:nrow(metadata_links_clean)) {
+  parte <- str_split(metadata_links_clean[i , "SUBJECT.AREA"], " > ")
+  metadata_links_clean_parcial[i, 2] <- parte[[1]][1]
+  metadata_links_clean_parcial[i, 3] <- parte[[1]][2]
   
-  part <- str_split(metadata_links_2[i , "SUBJECT.AREA.ca."], " > ")
-  metadata_links_2_parcial[i, 4] <- part[[1]][1]
-  metadata_links_2_parcial[i, 5] <- part[[1]][2]
+  part <- str_split(metadata_links_clean[i , "SUBJECT.AREA.ca."], " > ")
+  metadata_links_clean_parcial[i, 4] <- part[[1]][1]
+  metadata_links_clean_parcial[i, 5] <- part[[1]][2]
   
-  nombre <- str_split(as.character(metadata_links_2[i , "SUBJECT.CODE"]), '\\.')
-  metadata_links_2_parcial[i, 6] <- nombre[[1]][1]
-  metadata_links_2_parcial[i, 7] <- nombre[[1]][2]
+  nombre <- str_split(as.character(metadata_links_clean[i , "SUBJECT.CODE"]), '\\.')
+  metadata_links_clean_parcial[i, 6] <- nombre[[1]][1]
+  metadata_links_clean_parcial[i, 7] <- nombre[[1]][2]
 }
 
-names(metadata_links_2_parcial) <- c("MATRIX", "SUBJECT.AREA.1", "SUBJECT.AREA.2", "SUBJECT.AREA.ca.1", "SUBJECT.AREA.ca.2", "SUBJECT.CODE.1", "SUBJECT.CODE.2")
 
-metadata_links_2 <- full_join(metadata_links_2, metadata_links_2_parcial, by="MATRIX")
+joining_names <- colnames(metadata_links_clean)
+joining_names <- joining_names[-c(1, 2, 3)]
 
-setwd(paste0(directory, "/Data/"))
-write.csv(metadata_links_2, "metadata_links.csv", fileEncoding = "UTF-8")
+metadata_raw <- select(metadata_raw, -joining_names)
+
+names(metadata_links_clean_parcial) <- c("MATRIX", "SUBJECT.AREA.1", "SUBJECT.AREA.2", "SUBJECT.AREA.ca.1", "SUBJECT.AREA.ca.2", "SUBJECT.CODE.1", "SUBJECT.CODE.2")
+
+metadata_links_clean <- full_join(metadata_links_clean, metadata_links_clean_parcial, by="MATRIX")
+write.csv(metadata_links, "metadata_links.csv", fileEncoding = "UTF-8")
+
+
+all_metadata_links <- full_join(metadata_raw, metadata_links_clean, by="MATRIX")
+write.csv(all_metadata_links, "all_metadata_links.csv", fileEncoding = "UTF-8")
 ```
 
 # *Falta data (fecha)*
