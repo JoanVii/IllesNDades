@@ -6,13 +6,11 @@ all_metadata_links <- tibble(read.csv(paste0(directory, "/all_metadata_links.csv
 
 col_names <- colnames(all_metadata_links)
 
-### son aquelles que no aporten cap info 
+### no info
 delete <- c("X", "X.1", "AGGREGALLOWED", "AUTOPEN", "AXIS.VERSION", "CHARSET", "COPYRIGHT",
-              "DESCRIPTIONDEFAULT", "CONTVARIABLE", "CONTVARIABLE.ca.", "LANGUAGE", "LANGUAGES")
-### son aquelles que no aporten cap info
+            "DESCRIPTIONDEFAULT", "CONTVARIABLE", "CONTVARIABLE.ca.", "LANGUAGE", "LANGUAGES")
 
-
-### no se que hi ha...
+### trivial info
 maybe_delete <- c("CODES", "CODES.ca.", "MAP", "MAP.ca.", "PRECISION", "PRECISION.ca.", "CONTACT", "CONTACT.ca.")
 ###
 
@@ -27,6 +25,7 @@ col_names <- setdiff(col_names, maybe_delete)
 #   print(paste0("Hi ha ", num_data, " dades uniques a la columna"))
 #   #print(head(unique(dades[col_names[i]]), 10))
 # }
+
 
 imp_metadata_links <- all_metadata_links[col_names]
 
