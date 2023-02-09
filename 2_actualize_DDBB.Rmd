@@ -47,7 +47,7 @@ nrow(links_to_actualize)
 ```{r PACIENCIA, message=FALSE, warning=FALSE}
 setwd(paste0(directory, "/Data/"))
 
-n_subset <- 10000
+n_subset <- 30
 partitions <- ceiling(nrow(links_to_actualize)/n_subset)
 
 # reading the metadata from multiple DDBB, do it whit partitions cause it's easy to debug
@@ -154,22 +154,22 @@ all_metadata_links <- full_join(metadata_raw, metadata_links_clean, by="MATRIX")
 
 
 ```{r metadata_links_noves_col_PACIENCIA_0}
+
 setwd(paste0(directory, "/Data/"))
+links_to_download <- read.csv("links_to_download.csv",  fileEncoding = "UTF-8")
 
 metadata_links_old <- read.csv("metadata_links.csv",  fileEncoding = "UTF-8")
 metadata_links_old <- metadata_links_old[, -1]
 
 new_rows <- c(metadata_links[, "MATRIX"])
-old_rows <- metadata_links_old$MATRIX %in% new_rows
+old_rows <- !(metadata_links_old$MATRIX %in% new_rows)
 
-
-metadata_links_old <- metadata_links_old[!old_rows, ]
+metadata_links_old <- metadata_links_old[ old_rows, ]
 metadata_links <- rbind(metadata_links_old, metadata_links)
 
 write.csv(metadata_links, "metadata_links.csv", fileEncoding = "UTF-8")
 
 ###
-
 
 all_metadata_links_old <- read.csv("all_metadata_links.csv",  fileEncoding = "UTF-8")
 all_metadata_links_old <- all_metadata_links_old[, -1]
@@ -217,10 +217,8 @@ setwd(paste0(directory, "/Data/"))
 imp_metadata_links_old <- read.csv("imp_metadata_links.csv",  fileEncoding = "UTF-8")
 imp_metadata_links_old <- imp_metadata_links_old[, -1]
 
-imp_metadata_links_old <- imp_metadata_links_old[!old_rows, ]
+imp_metadata_links_old <- imp_metadata_links_old[old_rows, ]
 imp_metadata_links <- rbind(imp_metadata_links_old, imp_metadata_links)
-
-nrow(imp_metadata_links)
 
 write.csv(imp_metadata_links,"imp_metadata_links.csv", fileEncoding = "UTF-8")
 ```
