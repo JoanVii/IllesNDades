@@ -1,5 +1,5 @@
 ---
-title: "Create BBDD"
+title: "Actualize BBDD"
 author: "Illes & Dades"
 date: "`r Sys.Date()`"
 output: html_document
@@ -23,6 +23,7 @@ library("pxR")
 #source("Functions/llegir_px_csv_i_metadades_fast.R")
 source("Functions/llegir_px_csv_i_metadades_fast_2.R")
 source("Functions/rm_duplicated_data.R")
+source("Functions/rm_duplicated_data_2.R")
 
 
 #directory <- paste0(getwd(), "/Prova")
@@ -32,41 +33,28 @@ directory <- getwd()
 
 ## Web Scraping a la pagina web de l'IBESTAT
 
-Per començar, cal trobar tots els links de descarrega de les bases de dades. Per fer-ho fet web scraping a la pàgina de l'ibestat manyalment i després s'usa el paquet *rvest*. S'agafa el codi de la pagina, es selecciona tots els links que contenen els fitxer .px i es preparen els links per que es puguin descarregar fàcilment. Això ho he fet al fitxer *web_scraping.R* i he creat un arxiu CSV anomenat links_to_download.
+Per començar, cal trobar tots els links de descarrega de les bases de dades. Per fer-ho fet web scraping a la pàgina de l'ibestat manyalment i després s'usa el paquet *rvest*. S'agafa el codi de la pagina, es selecciona tots els links que contenen els fitxer .px i es preparen els links per que es puguin descarregar fàcilment. Això ho he fet al fitxer *web_scraping.R* i he creat un arxiu CSV anomenat links_to_actualize.
 
 ```{r web_scraping}
 # fet a 0_web_scraping.Rmd
 ```
 
-Cream un arxiu csv que conté el links i el nom de la bbdd. Aquest fitxer es diu **links_to_download.csv**
+Cream un arxiu csv que conté el links i el nom de la bbdd. Aquest fitxer es diu **links_to_actualize.csv**
 
 ```{r preparar_arxius}
-links_to_download <- read.csv("Data/links_to_download.csv", fileEncoding = "UTF-8")
+links_to_actualize <- read.csv("Data/links_to_actualize.csv", fileEncoding = "UTF-8")
 
-# canvis de noms de variables i mes:
-# links_to_download <- links_descarregar
-# directory <- directori
-# metadata_### <- doc_metadata_####
-# key_var <- var_distintives
-# metadata_links_2 <- metadata_links_clean
-# metadata_raw <- metadata_util
-# NEW imp_metadata_links
-
-links_to_download[ ,1] <- paste0("ID_", seq(1:nrow(links_to_download)))
-
-names(links_to_download) <- c("ID", "Titol_cat", "Enllac", "Nom_BBDD")
+links_to_actualize <- links_to_actualize[ , -1]
+names(links_to_actualize) <- c("ID", "Titol_cat", "Enllac", "Nom_BBDD")
 ```
 
 ***CODI PER NO HAVER DE COMPILAR PER LES 22280 bbdd sinó per n***
 
 ```{r subdataset, eval=FALSE, include=FALSE}
-set.seed(1420)
-links_to_download <- links_to_download[sample(nrow(links_to_download), 300, replace = FALSE),]
-```
+set.seed(140)
+links_to_actualize<-links_to_actualize[sample(nrow(links_to_actualize), 30, replace = FALSE),]
 
-
-```{r n_subdataset}
-nrow(links_to_download)
+nrow(links_to_actualize)
 ```
 
 # Maneig de la BBDD:
@@ -77,12 +65,12 @@ nrow(links_to_download)
 setwd(paste0(directory, "/Data/"))
 
 n_subset <- 10000
-partitions <- ceiling(nrow(links_to_download)/n_subset)
+partitions <- ceiling(nrow(links_to_actualize)/n_subset)
 
 # reading the metadata from multiple DDBB, do it whit partitions cause it's easier to debug
 for (i in 1:partitions) {
   
-  links_mini <- links_to_download[(i*n_subset-(n_subset-1)):(i*n_subset),]
+  links_mini <- links_to_actualize[(i*n_subset-(n_subset-1)):(i*n_subset),]
   
   DADES <- llegir.px.csv.i.metadades.fast.2(links_mini)
   
@@ -113,7 +101,21 @@ for (i in 1:partitions){
 
 print(paste0("nrow: ", nrow(unique(metadata_raw))))
 
-write.csv(metadata_raw, "metadata_raw.csv", fileEncoding = "UTF-8")
+#
+
+metadata_raw_old <- read.csv("metadata_raw.csv", fileEncoding = "UTF-8")
+metadata_raw_old <- as_tibble(metadata_raw_old[,-1]) # afegit coma
+
+old_ID <- unique(metadata_raw_old$ID)
+new_ID <- unique(metadata_raw$ID)
+
+metadata_raw_old <- metadata_raw_old[!old_ID %in% new_ID, ]
+metadata_raw_act <- rbind(metadata_raw_old, metadata_raw)
+#
+
+write.csv(metadata_raw_act, "metadata_raw.csv", fileEncoding = "UTF-8")
+rm(metadata_raw_old)
+rm(metadata_raw_act)
 ```
 
 Al fitxer "metadata_raw.csv" hi ha la meta info de les basses de dades!
@@ -125,9 +127,9 @@ L'arxiu metadata_links_clean, són les metadades amb el link de descarrega i ja 
 ```{r}
 setwd(paste0(directory, "/Data/"))
 
-names(links_to_download) <- c("ID", "Titol_cat", "Enllac", "Nom_BBDD" )
+names(links_to_actualize) <- c("ID", "Titol_cat", "Enllac", "Nom_BBDD" )
 
-metadata_links_clean  <- full_join(links_to_download, metadata_raw[,-1], by="ID")
+metadata_links_clean  <- full_join(links_to_actualize, metadata_raw[,-1], by="ID")
 
 metadata_links_clean <- metadata_links_clean[, !colnames(metadata_links_clean) %in% "Noms_dades"]
 metadata_links_clean <- metadata_links_clean[!is.na(metadata_links_clean$MATRIX),]
@@ -161,11 +163,22 @@ metadata_links_clean <- full_join(metadata_links_clean, metadata_links_clean_par
 
 all_metadata_links <- metadata_links_clean
 
-all_metadata_links <- rm.duplicated.data(all_metadata_links)
+all_metadata_links <- rm.duplicated.data.2(all_metadata_links)
+
+#
+all_metadata_links_old <- read.csv("all_metadata_links.csv", fileEncoding = "UTF-8")
+all_metadata_links_old <- all_metadata_links_old[, -1]
+all_metadata_links_old <- all_metadata_links_old[!colnames(all_metadata_links_old) %in% c("X", "Noms_dades")] # eliminar
+
+old_ID <- unique(all_metadata_links_old$ID)
+new_ID <- unique(all_metadata_links$ID)
+
+all_metadata_links_old <- all_metadata_links_old[!old_ID %in% new_ID, ]
+all_metadata_links <- rbind(all_metadata_links_old, all_metadata_links)
+#
 
 write.csv(all_metadata_links, "all_metadata_links.csv", fileEncoding = "UTF-8")
-
-
+rm(all_metadata_links_old)
 ```
 
 ```{r}
@@ -231,8 +244,7 @@ setwd(paste0(directory, "/Data/"))
 links_to_actualize <- imp_metadata_links[imp_metadata_links$"UPDATE.FREQUENCY" != "No se actualiza" &
                                            !is.na(imp_metadata_links$"UPDATE.FREQUENCY"), ]
 
-links_to_actualize <- links_to_actualize[c("ID", "Titol_cat", "Enllac", "Nom_BBDD")] # eliminat noms_dades?
-#names(links_to_actualize) <- c("ID","Titol_cat", "Enllac", "Nom_BBDD")
+links_to_actualize <- links_to_actualize[c("ID", "Titol_cat", "Enllac", "Nom_BBDD")]
 
 
 write.csv(links_to_actualize, "links_to_actualize.csv", fileEncoding = "UTF-8")
