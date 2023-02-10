@@ -2,6 +2,9 @@ llegir.px.csv.i.metadades.fast <- function(links_descarregar = links_descarregar
   #links_descarregar = links_mini
   temp <- as.character(links_descarregar[, "Nom_BBDD"])
   temp_enllac <- as.character(links_descarregar[, "Enllac"])
+  # New 
+  temp_ID <- as.character(links_descarregar[, "ID"])
+  ###
   
   doc_px <-tibble()  # arxiu temporal on es bolca la info del px
   doc_metadata <-tibble() #arxiu de metadades
@@ -12,7 +15,8 @@ llegir.px.csv.i.metadades.fast <- function(links_descarregar = links_descarregar
   error_guardat_csv <- c() # eliminar!
   error_i <- c()
   
-  cat_unic <- c("Noms_dades", "AGGREGALLOWED", "AUTOPEN", "AXIS.VERSION", "CHARSET", "CODES", 
+  # New add "ID"
+  cat_unic <- c("Noms_dades", "ID", "AGGREGALLOWED", "AUTOPEN", "AXIS.VERSION", "CHARSET", "CODES", 
                 "CODES.ca.", "CONTACT", "CONTACT.ca.", "CONTENTS", "CONTENTS.ca.", 
                 "COPYRIGHT", "CREATION.DATE", "DATA", "DECIMALS", "DESCRIPTION", 
                 "DESCRIPTION.ca.", "DESCRIPTIONDEFAULT", "ELIMINATION", "ELIMINATION.ca.", 
@@ -72,7 +76,12 @@ llegir.px.csv.i.metadades.fast <- function(links_descarregar = links_descarregar
     
     doc_metadata_util[n,1] <- temp[i]
     
-    for(j in 2:length(cat_unic)){
+    #New 
+    doc_metadata_util[n,2] <- temp_ID[i]
+    ###
+    
+    # Canvi de for(j in 2:length(cat_unic)){ a:
+    for(j in 3:length(cat_unic)){
       
       if(sum(is.na(doc_px[[ cat_unic[j] ]] [[1]] [2]))){
         

@@ -6,6 +6,7 @@ rm.duplicated.data<- function(data){
   if(length(unique(data$MATRIX)) == length(unique(data$Nom_BBDD)) & length(unique(data$MATRIX)) == nrow(data)){
     data <- data[, !colnames(data) %in% c("Noms_dades", "X.1", "X")]
     return(data)
+    
   }else{
     data <- data[, !colnames(data) %in% c("Noms_dades", "X.1", "X")]
     
@@ -59,9 +60,12 @@ rm.duplicated.data<- function(data){
     data_dupl_MATRIX_save <- rbind(data_dupl_MATRIX_save, data_dupl_MATRIX_save_2)
     nrow(data_dupl_MATRIX_save)
     
-    data_dupl_MATRIX$Nom_BBDD <- paste0(data_dupl_MATRIX$Nom_BBDD, "!", data_dupl_MATRIX$LAST.UPDATED)
+    if (nrow(data_dupl_MATRIX) > 0){
+      data_dupl_MATRIX$Nom_BBDD <- paste0(data_dupl_MATRIX$Nom_BBDD, "!", data_dupl_MATRIX$LAST.UPDATED)
+    }
     
     data_dupl_MATRIX_save <- rbind(data_dupl_MATRIX_save, data_dupl_MATRIX)
+
     
     data <- rbind(setdiff(data, data_dupl_MATRIX_original), data_dupl_MATRIX_save)
     

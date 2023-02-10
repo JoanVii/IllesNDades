@@ -84,7 +84,7 @@ for (i in 1:partitions) {
   
   links_mini <- links_to_download[(i*n_subset-(n_subset-1)):(i*n_subset),]
   
-  DADES <- llegir.px.csv.i.metadades.fast.2(links_mini)
+  DADES <- llegir.px.csv.i.metadades.fast(links_mini)
   
   # write(DADES$errors$error_lectura_px, paste0("error_lectura_px_", i, ".txt"))
   # write(DADES$errors$error_lectura_df, paste0("error_lectura_df_", i, ".txt"))

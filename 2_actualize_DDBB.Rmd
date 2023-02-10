@@ -20,37 +20,53 @@ library("tidyverse")
 library("pxR")
 
 # source("functions_metadades.R") 
+#source("Functions/llegir_px_csv_i_metadades_fast.R")
 source("Functions/llegir_px_csv_i_metadades_fast.R")
-directory <- paste0(getwd(), "/Prova")
+source("Functions/rm_duplicated_data.R")
+
+
+#directory <- paste0(getwd(), "/Prova")
+directory <- getwd()
+
 ```
 
+## Web Scraping a la pagina web de l'IBESTAT
+
+Per començar, cal trobar tots els links de descarrega de les bases de dades. Per fer-ho fet web scraping a la pàgina de l'ibestat manyalment i després s'usa el paquet *rvest*. S'agafa el codi de la pagina, es selecciona tots els links que contenen els fitxer .px i es preparen els links per que es puguin descarregar fàcilment. Això ho he fet al fitxer *web_scraping.R* i he creat un arxiu CSV anomenat links_to_actualize.
+
+```{r web_scraping}
+# fet a 0_web_scraping.Rmd
+```
 
 Cream un arxiu csv que conté el links i el nom de la bbdd. Aquest fitxer es diu **links_to_actualize.csv**
 
 ```{r preparar_arxius}
-setwd(paste0(directory, "/Data/"))
-links_to_actualize <- read.csv("links_to_actualize.csv")
+links_to_actualize <- read.csv("Data/links_to_actualize.csv", fileEncoding = "UTF-8")
 
+links_to_actualize <- links_to_actualize[ , -1]
+names(links_to_actualize) <- c("ID", "Titol_cat", "Enllac", "Nom_BBDD")
 ```
 
 ***CODI PER NO HAVER DE COMPILAR PER LES 22280 bbdd sinó per n***
 
 ```{r subdataset, eval=FALSE, include=FALSE}
-set.seed(142)
+set.seed(140)
 links_to_actualize<-links_to_actualize[sample(nrow(links_to_actualize), 30, replace = FALSE),]
 
 nrow(links_to_actualize)
 ```
 
-# Maneig BBDD
+# Maneig de la BBDD:
+
+## Obternir metainformació
 
 ```{r PACIENCIA, message=FALSE, warning=FALSE}
 setwd(paste0(directory, "/Data/"))
 
-n_subset <- 30
+n_subset <- 10000
 partitions <- ceiling(nrow(links_to_actualize)/n_subset)
 
-# reading the metadata from multiple DDBB, do it whit partitions cause it's easy to debug
+# reading the metadata from multiple DDBB, do it whit partitions cause it's easier to debug
 for (i in 1:partitions) {
   
   links_mini <- links_to_actualize[(i*n_subset-(n_subset-1)):(i*n_subset),]
@@ -84,43 +100,43 @@ for (i in 1:partitions){
 
 print(paste0("nrow: ", nrow(unique(metadata_raw))))
 
+#
+
+metadata_raw_old <- read.csv("metadata_raw.csv", fileEncoding = "UTF-8")
+metadata_raw_old <- as_tibble(metadata_raw_old[,-1]) # afegit coma
+
+old_ID <- unique(metadata_raw_old$ID)
+new_ID <- unique(metadata_raw$ID)
+
+metadata_raw_old <- metadata_raw_old[!old_ID %in% new_ID, ]
+metadata_raw_act <- rbind(metadata_raw_old, metadata_raw)
+#
+
+write.csv(metadata_raw_act, "metadata_raw.csv", fileEncoding = "UTF-8")
+rm(metadata_raw_old)
+rm(metadata_raw_act)
 ```
 
-## Seleccionar i millorar columnes per a la recerca
+Al fitxer "metadata_raw.csv" hi ha la meta info de les basses de dades!
 
-A continuació el que es fa es seleccionar les columnes més important de metadata_raw. I es crea el fitxer **metadata_links.csv** que a més conté els links de descarrega, el que permetra fer el cercador i baixar les dades online.
+## Natejar BBDD: eliminar NA, fer-ho llegible i millorar la separació per categories.
 
-```{r metadata_links_0}
-key_var <- c("CONTENTS", "CONTENTS.ca.", "CREATION.DATE", "DESCRIPTION", "DESCRIPTION.ca.", "INFO", "INFO.ca.", "MATRIX", "REFPERIOD", "REFPERIOD.ca.", "SUBJECT.AREA" , "SUBJECT.AREA.ca.", "SUBJECT.CODE", "SURVEY", "SURVEY.ca.", "TITLE", "TITLE.ca.")
+L'arxiu metadata_links_clean, són les metadades amb el link de descarrega i ja s'han llevat caràcters inutils
 
-metadata_mini <- metadata_raw[key_var]
-
-links_to_actualize <- links_to_actualize[,-1]
-
-names(links_to_actualize) <- c("Titol_cat", "Enllac", "MATRIX" )
-
-metadata_links <- full_join(links_to_actualize, metadata_mini, by="MATRIX")
-
-# Es crea una fila duplicada i no se pq, l'elimin
-metadata_links <- unique(metadata_links)
-```
-
-Tot seguit crea un fitxer que es metadata_links_clean.csv on llev els "\\n" dividesc millor certes columnes per millorar el cercador. i ho guard, com **metadata_links.csv**
-
-```{r metadata_links_noves_col_PACIENCIA_0}
-#delate /n & creating easy way to navegate the data
-
+```{r}
 setwd(paste0(directory, "/Data/"))
 
+names(links_to_actualize) <- c("ID", "Titol_cat", "Enllac", "Nom_BBDD" )
 
-metadata_links_clean <- metadata_links
-for (i in 1:nrow(metadata_links)) {
-  for (j in 1:ncol(metadata_links)) {
-    metadata_links_clean[i , j] <-  str_remove_all(metadata_links[i , j], '"\n"')
-  }
-}
+metadata_links_clean  <- full_join(links_to_actualize, metadata_raw[,-1], by="ID")
 
-metadata_links_clean_parcial <- metadata_links_clean[,"MATRIX"]
+metadata_links_clean <- metadata_links_clean[, !colnames(metadata_links_clean) %in% "Noms_dades"]
+metadata_links_clean <- metadata_links_clean[!is.na(metadata_links_clean$MATRIX),]
+
+metadata_links_clean <- metadata_links_clean %>% mutate_all(~gsub('"\n"', '', .))
+metadata_links_clean <- metadata_links_clean %>% mutate_all(~gsub('","', ', ', .))
+
+metadata_links_clean_parcial <- metadata_links_clean[,"ID"]
 metadata_links_clean_parcial <- as.data.frame(metadata_links_clean_parcial)
 
 for (i in 1:nrow(metadata_links_clean)) {
@@ -137,50 +153,56 @@ for (i in 1:nrow(metadata_links_clean)) {
   metadata_links_clean_parcial[i, 7] <- nombre[[1]][2]
 }
 
-
 joining_names <- colnames(metadata_links_clean)
-joining_names <- joining_names[-c(1, 2, 3)]
+joining_names <- joining_names[-c(1, 2, 3, 4)]
 
-metadata_raw <- select(metadata_raw, -joining_names)
+names(metadata_links_clean_parcial) <- c("ID", "SUBJECT.AREA.1", "SUBJECT.AREA.2", "SUBJECT.AREA.ca.1", "SUBJECT.AREA.ca.2", "SUBJECT.CODE.1", "SUBJECT.CODE.2")
 
-names(metadata_links_clean_parcial) <- c("MATRIX", "SUBJECT.AREA.1", "SUBJECT.AREA.2", "SUBJECT.AREA.ca.1", "SUBJECT.AREA.ca.2", "SUBJECT.CODE.1", "SUBJECT.CODE.2")
+metadata_links_clean <- full_join(metadata_links_clean, metadata_links_clean_parcial, by="ID")
 
-metadata_links_clean <- full_join(metadata_links_clean, metadata_links_clean_parcial, by="MATRIX")
+all_metadata_links <- metadata_links_clean
 
+all_metadata_links <- rm.duplicated.data(all_metadata_links)
 
-all_metadata_links <- full_join(metadata_raw, metadata_links_clean, by="MATRIX")
-
-```
-
-
-```{r metadata_links_noves_col_PACIENCIA_0}
-
-setwd(paste0(directory, "/Data/"))
-links_to_download <- read.csv("links_to_download.csv",  fileEncoding = "UTF-8")
-
-metadata_links_old <- read.csv("metadata_links.csv",  fileEncoding = "UTF-8")
-metadata_links_old <- metadata_links_old[, -1]
-
-new_rows <- c(metadata_links[, "MATRIX"])
-old_rows <- !(metadata_links_old$MATRIX %in% new_rows)
-
-metadata_links_old <- metadata_links_old[ old_rows, ]
-metadata_links <- rbind(metadata_links_old, metadata_links)
-
-write.csv(metadata_links, "metadata_links.csv", fileEncoding = "UTF-8")
-
-###
-
-all_metadata_links_old <- read.csv("all_metadata_links.csv",  fileEncoding = "UTF-8")
+#
+all_metadata_links_old <- read.csv("all_metadata_links.csv", fileEncoding = "UTF-8")
 all_metadata_links_old <- all_metadata_links_old[, -1]
+all_metadata_links_old <- all_metadata_links_old[!colnames(all_metadata_links_old) %in% c("X", "Noms_dades")] # eliminar
 
-all_metadata_links_old <- all_metadata_links_old[!old_rows, ]
+old_ID <- unique(all_metadata_links_old$ID)
+new_ID <- unique(all_metadata_links$ID)
+
+all_metadata_links_old <- all_metadata_links_old[!old_ID %in% new_ID, ]
 all_metadata_links <- rbind(all_metadata_links_old, all_metadata_links)
+#
 
 write.csv(all_metadata_links, "all_metadata_links.csv", fileEncoding = "UTF-8")
+rm(all_metadata_links_old)
 ```
 
-# *Falta data (fecha)*
+```{r}
+
+```
+
+Mirar dif entre all_metadata_links i metadata_links_clean
+
+A metadata_links.csv hi ha un minifitxer amb lo més basic
+
+```{r}
+setwd(paste0(directory, "/Data/"))
+
+#metadata_raw_2 <- select(metadata_raw, -joining_names)
+#
+#all_metadata_links <- full_join(metadata_raw_2, metadata_links_clean, by="ID")
+#write.csv(all_metadata_links, "all_metadata_links.csv", fileEncoding = "UTF-8")
+
+key_var <- c("Enllac", "ID", "CONTENTS", "CONTENTS.ca.", "CREATION.DATE", "DESCRIPTION", "DESCRIPTION.ca.", "INFO", "INFO.ca.", "MATRIX", "REFPERIOD", "REFPERIOD.ca.", "SUBJECT.AREA" , "SUBJECT.AREA.ca.", "SUBJECT.CODE", "SURVEY", "SURVEY.ca.", "TITLE", "TITLE.ca.")
+
+write.csv(all_metadata_links[key_var], "metadata_links.csv", fileEncoding = "UTF-8")
+
+```
+
+A imp_metadata_links hi ha la info no trivial!
 
 ```{r, revisar1}
 setwd(paste0(directory, "/Data/"))
@@ -209,20 +231,25 @@ col_names <- setdiff(col_names, maybe_delete)
 
 
 imp_metadata_links <- all_metadata_links[col_names]
-```
-
-```{r}
-setwd(paste0(directory, "/Data/"))
-
-imp_metadata_links_old <- read.csv("imp_metadata_links.csv",  fileEncoding = "UTF-8")
-imp_metadata_links_old <- imp_metadata_links_old[, -1]
-
-imp_metadata_links_old <- imp_metadata_links_old[old_rows, ]
-imp_metadata_links <- rbind(imp_metadata_links_old, imp_metadata_links)
 
 write.csv(imp_metadata_links,"imp_metadata_links.csv", fileEncoding = "UTF-8")
 ```
 
+links_to_actualize Hi ha els links per actualitzar
+
+```{r, revisar2}
+setwd(paste0(directory, "/Data/"))
+
+links_to_actualize <- imp_metadata_links[imp_metadata_links$"UPDATE.FREQUENCY" != "No se actualiza" &
+                                           !is.na(imp_metadata_links$"UPDATE.FREQUENCY"), ]
+
+links_to_actualize <- links_to_actualize[c("ID", "Titol_cat", "Enllac", "Nom_BBDD")]
+
+
+write.csv(links_to_actualize, "links_to_actualize.csv", fileEncoding = "UTF-8")
+```
+
+# *Falta data (fecha)*
 
 ```{r include=FALSE}
 END <- Sys.time()
