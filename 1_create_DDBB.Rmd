@@ -23,6 +23,8 @@ library("pxR")
 #source("Functions/llegir_px_csv_i_metadades_fast.R")
 source("Functions/llegir_px_csv_i_metadades_fast_2.R")
 source("Functions/rm_duplicated_data.R")
+source("Functions/reformate_date.R")
+
 
 
 #directory <- paste0(getwd(), "/Prova")
@@ -163,6 +165,9 @@ all_metadata_links <- metadata_links_clean
 
 all_metadata_links <- rm.duplicated.data(all_metadata_links)
 
+all_metadata_links <- reformat.date(all_metadata_links[, c("ID" ,"REFPERIOD.ca.")])
+all_metadata_links <- full_join(all_metadata_links_original, prova, by = "ID")
+
 write.csv(all_metadata_links, "all_metadata_links.csv", fileEncoding = "UTF-8")
 
 
@@ -184,7 +189,7 @@ setwd(paste0(directory, "/Data/"))
 #all_metadata_links <- full_join(metadata_raw_2, metadata_links_clean, by="ID")
 #write.csv(all_metadata_links, "all_metadata_links.csv", fileEncoding = "UTF-8")
 
-key_var <- c("Enllac", "ID", "CONTENTS", "CONTENTS.ca.", "CREATION.DATE", "DESCRIPTION", "DESCRIPTION.ca.", "INFO", "INFO.ca.", "MATRIX", "REFPERIOD", "REFPERIOD.ca.", "SUBJECT.AREA" , "SUBJECT.AREA.ca.", "SUBJECT.CODE", "SURVEY", "SURVEY.ca.", "TITLE", "TITLE.ca.")
+key_var <- c("Enllac", "ID", "CONTENTS", "CONTENTS.ca.", "CREATION.DATE", "DESCRIPTION", "DESCRIPTION.ca.", "INFO", "INFO.ca.", "MATRIX", "REFPERIOD", "REFPERIOD.ca.", "SUBJECT.AREA" , "SUBJECT.AREA.ca.", "SUBJECT.CODE", "SURVEY", "SURVEY.ca.", "TITLE", "TITLE.ca.", "REFPERIOD.start.", "REFPERIOD.end.")
 
 write.csv(all_metadata_links[key_var], "metadata_links.csv", fileEncoding = "UTF-8")
 

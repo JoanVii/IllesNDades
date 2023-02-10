@@ -38,7 +38,7 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 
-# Folds (data, others)
+# Folds (data, others, test)
 Data/
-Others/
+Other/
 Prova/
