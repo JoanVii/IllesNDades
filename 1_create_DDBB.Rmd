@@ -21,14 +21,14 @@ library("pxR")
 
 # source("functions_metadades.R") 
 #source("Functions/llegir_px_csv_i_metadades_fast.R")
-source("Functions/llegir_px_csv_i_metadades_fast_2.R")
+source("Functions/llegir_px_csv_i_metadades_fast.R")
 source("Functions/rm_duplicated_data.R")
 source("Functions/reformate_date.R")
 
 
 
-#directory <- paste0(getwd(), "/Prova")
-directory <- getwd()
+directory <- paste0(getwd(), "/Prova")
+#directory <- getwd()
 
 ```
 
@@ -61,7 +61,7 @@ names(links_to_download) <- c("ID", "Titol_cat", "Enllac", "Nom_BBDD")
 
 ***CODI PER NO HAVER DE COMPILAR PER LES 22280 bbdd sinó per n***
 
-```{r subdataset, eval=FALSE, include=FALSE}
+```{r subdataset, eval=TRUE, include=FALSE}
 set.seed(1420)
 links_to_download <- links_to_download[sample(nrow(links_to_download), 300, replace = FALSE),]
 ```
@@ -165,8 +165,9 @@ all_metadata_links <- metadata_links_clean
 
 all_metadata_links <- rm.duplicated.data(all_metadata_links)
 
-all_metadata_links <- reformat.date(all_metadata_links[, c("ID" ,"REFPERIOD.ca.")])
-all_metadata_links <- full_join(all_metadata_links_original, prova, by = "ID")
+all_metadata_links_date <- reformat.date(all_metadata_links[, c("ID" ,"REFPERIOD.ca.")])
+
+all_metadata_links <- full_join(all_metadata_links, all_metadata_links_date, by = "ID")
 
 write.csv(all_metadata_links, "all_metadata_links.csv", fileEncoding = "UTF-8")
 

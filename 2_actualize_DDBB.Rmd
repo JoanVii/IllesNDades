@@ -27,8 +27,8 @@ source("Functions/reformate_date.R")
 
 
 
-#directory <- paste0(getwd(), "/Prova")
-directory <- getwd()
+directory <- paste0(getwd(), "/Prova")
+#directory <- getwd()
 
 ```
 
@@ -43,7 +43,9 @@ Per començar, cal trobar tots els links de descarrega de les bases de dades. Pe
 Cream un arxiu csv que conté el links i el nom de la bbdd. Aquest fitxer es diu **links_to_actualize.csv**
 
 ```{r preparar_arxius}
-links_to_actualize <- read.csv("Data/links_to_actualize.csv", fileEncoding = "UTF-8")
+setwd(paste0(directory, "/Data/"))
+
+links_to_actualize <- read.csv("links_to_actualize.csv", fileEncoding = "UTF-8")
 
 links_to_actualize <- links_to_actualize[ , -1]
 names(links_to_actualize) <- c("ID", "Titol_cat", "Enllac", "Nom_BBDD")
@@ -51,9 +53,9 @@ names(links_to_actualize) <- c("ID", "Titol_cat", "Enllac", "Nom_BBDD")
 
 ***CODI PER NO HAVER DE COMPILAR PER LES 22280 bbdd sinó per n***
 
-```{r subdataset, eval=FALSE, include=FALSE}
+```{r subdataset, eval=TRUE, include=FALSE}
 set.seed(140)
-links_to_actualize<-links_to_actualize[sample(nrow(links_to_actualize), 30, replace = FALSE),]
+links_to_actualize<-links_to_actualize[sample(nrow(links_to_actualize), 33, replace = FALSE),]
 
 nrow(links_to_actualize)
 ```
@@ -166,8 +168,8 @@ all_metadata_links <- metadata_links_clean
 
 all_metadata_links <- rm.duplicated.data(all_metadata_links)
 
-all_metadata_links <- reformat.date(all_metadata_links[, c("ID" ,"REFPERIOD.ca.")])
-all_metadata_links <- full_join(all_metadata_links_original, prova, by = "ID")
+all_metadata_links_date <- reformat.date(all_metadata_links[, c("ID" ,"REFPERIOD.ca.")])
+all_metadata_links <- full_join(all_metadata_links, all_metadata_links_date, by = "ID")
 
 
 #
