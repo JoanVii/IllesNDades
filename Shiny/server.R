@@ -20,8 +20,8 @@ metadata <- read_csv("imp_metadata_links.csv", locale = locale(encoding = "UTF-8
 
 
 #metadata_cat <- read_csv("BBDD_web_05_01_2023.csv", locale = locale(encoding = "UTF-8"))
-metadata_cat<- metadata[, c("SUBJECT.AREA.ca.1", "SUBJECT.AREA.ca.2", "TITLE.ca.", "REFPERIOD.start.", "REFPERIOD.end.", "Nom_BBDD", "ID" )]
-names(metadata_cat) <- c("Area", "Subarea", "Titol", "Inici periode", "Fi periode", "NomBBDD", "ID")
+metadata_cat<- metadata[, c("SUBJECT.AREA.ca.1", "SUBJECT.AREA.ca.2", "TITLE.ca.", "REFPERIOD.start.", "REFPERIOD.end.", "Nom_BBDD")]
+names(metadata_cat) <- c("Area", "Subarea", "Titol", "Inici periode", "Fi periode", "NomBBDD")
            
 vec_Area <- c(unique(metadata_cat[, "Area"]))[[1]]
 list_Area <- as.list(unique(metadata_cat[, "Area"]))[[1]]
@@ -236,15 +236,42 @@ shinyServer(function(input, output) {
     
     DT::datatable(
       data,
-      options = list(pageLength = 100),
+      
+      rownames = FALSE,
+      
+      extensions = 'Buttons',
+      
+      options = list(
+        pageLength = 10,
+        paging = TRUE,
+        searching = TRUE,
+        fixedColumns = TRUE,
+        autoWidth = TRUE,
+        ordering = FALSE,
+        dom = 'Bfrtip',
+        buttons = c('copy', 'csv', 'excel', 'pdf')
+      ),
+      
       selection = list(
         mode = "single", # canviar a multiple !
         selected = NULL,
-        target = 'row',
+        target = "row",
         selectable = NULL
-      )
+      ),
+      
+      class = "display"
+      
     )
-  }, server = TRUE)
+  }, server = FALSE)
+  
+  output$download_table_metadata <- downloadHandler(
+    filename = function() {
+      paste("metadata", ".csv", sep="")
+    },
+    content = function(file) {
+      write.csv(dades_reactives_2(), fileEncoding = "UTF-8", file)
+    }
+  )
   
 
   bbdd_seleccionada <- reactive({
@@ -368,10 +395,45 @@ shinyServer(function(input, output) {
     
   })
   
-  output$Taula_variables =DT::renderDataTable({
+  #output$Taula_variables =DT::renderDataTable({
+  #  
+  #  DT::datatable(doc_df_reactive())
+  #})
+  
+  output$Taula_variables = DT::renderDataTable({
+    data <- doc_df_reactive()
     
-    DT::datatable(doc_df_reactive())
-  })
+    DT::datatable(
+      data,
+      
+      rownames = FALSE,
+      
+      extensions = 'Buttons',
+      
+      options = list(
+        pageLength = 10,
+        paging = TRUE,
+        searching = TRUE,
+        fixedColumns = TRUE,
+        autoWidth = TRUE,
+        ordering = FALSE,
+        dom = 'Bfrtip',
+        buttons = c('copy', 'csv', 'excel', 'pdf')
+      ),
+      
+      class = "display"
+      
+    )
+  }, server = FALSE)
+  
+  output$download_table_var <- downloadHandler(
+    filename = function() {
+      paste(bbdd_seleccionada(), ".csv", sep="")
+    },
+    content = function(file) {
+      write.csv(doc_df_reactive(), fileEncoding = "UTF-8", file)
+    }
+  )
   
   ### fi Pestanya 2
   
@@ -463,6 +525,19 @@ shinyServer(function(input, output) {
     grafic_reactive()
     
   })
+  
+  output$download_grafic <- downloadHandler(
+    filename = function() {
+      paste(bbdd_seleccionada(), "_grafic.jpeg", sep="")
+    },
+    content = function(file) {
+      device <- function(..., width, height)
+      grDevices::png(..., width = width, height = height, res = 300, units = "in")
+      ggsave(file, plot = grafic_reactive(), device = device)
+    }
+  )
+  
+  
   
   output$grafic_interactiu <- renderPlotly({
     

@@ -45,137 +45,146 @@ shinyUI(
     ),
     
     tabPanel(
-      "Selecció base de dades",
-      titlePanel("Selecció de la base de dades que es vol estudiar:"),
-      sidebarLayout(
-        sidebarPanel(
-          
-          checkboxGroupInput(
-            "selec_Area",
-            "Seleccionau l'area que desitgueu:",
-            choices = list_Area #input$list_Area
-          ),
-          
-          ###
-          
-          conditionalPanel(
-            "input.selec_Area != input.NULL",
-            uiOutput("UI_selec_Subarea"),
-          ),
-          
-          ###
-          
-          conditionalPanel(
-            "input.selec_Subarea != input.NULL",
-            uiOutput("UI_selec_Titol")
-          ),
-          
-          ###
-          
-          # Arreglar:
-          
-          radioButtons(
-            "mostrar_Data",
-            "Filtar per dates? (No funciona)",
-            choices = c("Si", "No"),
-            selected = "No"
-          ),
-          conditionalPanel(
-            "input.mostrar_Data != 'No'",
-            uiOutput("UI_selec_Data_slider"),
-            
-            #conditionalPanel(
-            #  "input.selec_Data_buttons == 'D1'",
-            #  uiOutput("UI_selec_Data_slider")
-            #  #UI_selec_Data_buttons
-            #)
-          ),
-          
-          ###
-          
-          radioButtons(
-            "mostrar_NomBBDD",
-            "Filtar per nom de la BBDD?",
-            choices = c("Si", "No"),
-            selected = "No"
-          ),
-          conditionalPanel(
-            "input.mostrar_NomBBDD == 'Si'",
-            uiOutput("UI_selec_NomBBDD")
-          )
-          
-          ###
-        ),
-        
-        mainPanel(
-          p("Pija sobre a *UNA* fila per seleccionar la base de dades corresponent."),
-          verbatimTextOutput("bbdd_seleccionada_txt"),
-          
-          dataTableOutput(outputId = "Taula_metadata")
-        )
-      )
-    ),
-    
-    
-    tabPanel(
-      "Selecció variables",
-      titlePanel("Selecció de les variables que vol estudiar:"),
-      sidebarLayout(
-        sidebarPanel(
-          
-          uiOutput("UI_provisional_bbdd"), #
-          
-          conditionalPanel( "output.nombre_columnes >= 1", uiOutput("UI_selec_1")),
-          conditionalPanel( "output.nombre_columnes >= 2", uiOutput("UI_selec_2")),
-          conditionalPanel( "output.nombre_columnes >= 3", uiOutput("UI_selec_3")),
-          conditionalPanel( "output.nombre_columnes >= 4", uiOutput("UI_selec_4")),
-          conditionalPanel( "output.nombre_columnes >= 5", uiOutput("UI_selec_5")),
-          conditionalPanel( "output.nombre_columnes >= 6", uiOutput("UI_selec_6")),
-          conditionalPanel( "output.nombre_columnes >= 7", uiOutput("UI_selec_7")),
-          
-        ),
-        
-        mainPanel(
-          dataTableOutput(outputId = "Taula_variables")
-        )
-        
-      )
-      
-      
-    ),
-    
-    tabPanel(
-      "Gràfic!",
-      titlePanel("Seleccioneu com desitja visualitzar les variables:"),
-      sidebarLayout(
-        sidebarPanel(
-          
-          uiOutput("UI_selec_eix_x"),
-          uiOutput("UI_selec_eix_y"),
-          uiOutput("UI_selec_eix_color"),
-          
-          
-          
-          uiOutput("UI_selec_eix_shape"),
-          uiOutput("UI_selec_eix_linetype"),
-          uiOutput("UI_selec_eix_size")
-          
-        ),
-        
-        mainPanel(
-          tabsetPanel(
-            tabPanel("Gràfic estàtic",
-                     plotOutput("grafic_estatic")
+      ###
+      "Grafic",
+      tabsetPanel(
+        tabPanel(
+          "Selecció base de dades",
+          titlePanel("Selecció de la base de dades que es vol estudiar:"),
+          sidebarLayout(
+            sidebarPanel(
+              
+              checkboxGroupInput(
+                "selec_Area",
+                "Seleccionau l'area que desitgueu:",
+                choices = list_Area #input$list_Area
+              ),
+              
+              ###
+              
+              conditionalPanel(
+                "input.selec_Area != input.NULL",
+                uiOutput("UI_selec_Subarea"),
+              ),
+              
+              ###
+              
+              conditionalPanel(
+                "input.selec_Subarea != input.NULL",
+                uiOutput("UI_selec_Titol")
+              ),
+              
+              ###
+              
+              # Arreglar:
+              
+              radioButtons(
+                "mostrar_Data",
+                "Filtar per dates? (No funciona)",
+                choices = c("Si", "No"),
+                selected = "No"
+              ),
+              conditionalPanel(
+                "input.mostrar_Data != 'No'",
+                uiOutput("UI_selec_Data_slider"),
+                
+                #conditionalPanel(
+                #  "input.selec_Data_buttons == 'D1'",
+                #  uiOutput("UI_selec_Data_slider")
+                #  #UI_selec_Data_buttons
+                #)
+              ),
+              
+              ###
+              
+              radioButtons(
+                "mostrar_NomBBDD",
+                "Filtar per nom de la BBDD?",
+                choices = c("Si", "No"),
+                selected = "No"
+              ),
+              conditionalPanel(
+                "input.mostrar_NomBBDD == 'Si'",
+                uiOutput("UI_selec_NomBBDD")
+              )
+              
+              ###
             ),
-            tabPanel("Gràfic interactiu",
-                     p("Keep calm"),
-                     plotlyOutput("grafic_interactiu")
+            
+            mainPanel(
+              p("Pija sobre a *UNA* fila per seleccionar la base de dades corresponent."),
+              verbatimTextOutput("bbdd_seleccionada_txt"),
+              
+              dataTableOutput(outputId = "Taula_metadata"),
+              downloadButton("download_table_metadata", "Descarregar")
             )
           )
-        )
+        ),
         
+        
+        tabPanel(
+          "Selecció variables",
+          titlePanel("Selecció de les variables que vol estudiar:"),
+          sidebarLayout(
+            sidebarPanel(
+              
+              uiOutput("UI_provisional_bbdd"), #
+              
+              conditionalPanel( "output.nombre_columnes >= 1", uiOutput("UI_selec_1")),
+              conditionalPanel( "output.nombre_columnes >= 2", uiOutput("UI_selec_2")),
+              conditionalPanel( "output.nombre_columnes >= 3", uiOutput("UI_selec_3")),
+              conditionalPanel( "output.nombre_columnes >= 4", uiOutput("UI_selec_4")),
+              conditionalPanel( "output.nombre_columnes >= 5", uiOutput("UI_selec_5")),
+              conditionalPanel( "output.nombre_columnes >= 6", uiOutput("UI_selec_6")),
+              conditionalPanel( "output.nombre_columnes >= 7", uiOutput("UI_selec_7")),
+              
+            ),
+            
+            mainPanel(
+              dataTableOutput(outputId = "Taula_variables"),
+              downloadButton("download_table_var", "Descarregar")
+            )
+            
+          )
+          
+          
+        ),
+        
+        tabPanel(
+          "Gràfic!",
+          titlePanel("Seleccioneu com desitja visualitzar les variables:"),
+          sidebarLayout(
+            sidebarPanel(
+              
+              uiOutput("UI_selec_eix_x"),
+              uiOutput("UI_selec_eix_y"),
+              uiOutput("UI_selec_eix_color"),
+              
+              
+              
+              uiOutput("UI_selec_eix_shape"),
+              uiOutput("UI_selec_eix_linetype"),
+              uiOutput("UI_selec_eix_size")
+              
+            ),
+            
+            mainPanel(
+              tabsetPanel(
+                tabPanel("Gràfic estàtic",
+                         plotOutput("grafic_estatic"),
+                         downloadButton("download_grafic", "Descarregar")
+                ),
+                tabPanel("Gràfic interactiu",
+                         p("Keep calm"),
+                         plotlyOutput("grafic_interactiu")
+                )
+              )
+            )
+            
+          )
+        )
       )
+    ###
     )
-  
   )
 )
