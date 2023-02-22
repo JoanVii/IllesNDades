@@ -14,7 +14,7 @@ source("functions_cleaning_date.R")
 # des filtrat de BBDD:
 # filtrar per data (fecha) no va!
 
-setwd("D:/00_PseudoEsciptori/Illesndades/IllesNDades/IllesNDades_V2/Shiny")
+# setwd("D:/00_PseudoEsciptori/Illesndades/IllesNDades/IllesNDades_V2/Shiny")
 
 metadata <- read_csv("imp_metadata_links.csv", locale = locale(encoding = "UTF-8")) #No se on s'empra'
 
