@@ -23,13 +23,6 @@ shinyUI(
       
       hr(),
       
-      
-      h4("Com usar el web:"),
-      p("1. Anar a la secció de 'Selecció base de dades', escollir una base de dades i clicar-hi a sobre (S'ha de posar d'un color més fosc)."),
-      p("2. A 'Selecció de variables' escollir les variables que desitgeu, com menys millor si ho voleu visualitzar en un gràfic!"),
-      p("3. Triar com voleu que es vegin les dades recoman no tocar l'eix y i que l'eix x sigui l'eix temporal (si són dades temporals). A més, si teniu moltes dades millor reduir-ho que sinó es un cacao"),
-      
-      hr(),
       h4("Millores en ment:"),
       p("Dur a terme 3 publicacions setmanals tant al web com a Twitter on es mostrin un o diversos gràfics i generar debat"),
       p("Donar l'opció de descarregar els gràfics i les BBDD (modificades i originals)."),
@@ -47,6 +40,13 @@ shinyUI(
     tabPanel(
       ###
       "Grafic",
+      
+      h4("Com usar el web:"),
+      p("1. Anar a la secció de 'Selecció base de dades', escollir una base de dades i clicar-hi a sobre (S'ha de posar d'un color més fosc)."),
+      p("2. A 'Selecció de variables' escollir les variables que desitgeu, com menys millor si ho voleu visualitzar en un gràfic!"),
+      p("3. Triar com voleu que es vegin les dades recoman no tocar l'eix y i que l'eix x sigui l'eix temporal (si són dades temporals). A més, si teniu moltes dades millor reduir-ho que sinó es un cacao"),
+      
+      hr(),
       tabsetPanel(
         tabPanel(
           "Selecció base de dades",

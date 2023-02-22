@@ -303,14 +303,12 @@ shinyServer(function(input, output) {
     
     #on line:
     data <- filter(metadata, MATRIX == input$bbdd)
-    #print(data[, "Enllac"][[1]])
     read.px(data[, "Enllac"][[1]])
+    
     
     # off line:
     #setwd(directori)
     #read.px(paste0(input$bbdd, ".px"))
-    
-    
     
   })
   

@@ -11,7 +11,7 @@
 
 <meta name="author" content="Illes &amp; Dades" />
 
-<meta name="date" content="2023-02-09" />
+<meta name="date" content="2023-02-21" />
 
 <title>Create BBDD</title>
 
@@ -354,7 +354,7 @@ display: none;
 
 <h1 class="title toc-ignore">Create BBDD</h1>
 <h4 class="author">Illes &amp; Dades</h4>
-<h4 class="date">2023-02-09</h4>
+<h4 class="date">2023-02-21</h4>
 
 </div>
 
@@ -370,8 +370,10 @@ library(&quot;pxR&quot;)
 
 # source(&quot;functions_metadades.R&quot;) 
 #source(&quot;Functions/llegir_px_csv_i_metadades_fast.R&quot;)
-source(&quot;Functions/llegir_px_csv_i_metadades_fast_2.R&quot;)
+source(&quot;Functions/llegir_px_csv_i_metadades_fast.R&quot;)
 source(&quot;Functions/rm_duplicated_data.R&quot;)
+source(&quot;Functions/reformate_date.R&quot;)
+
 
 
 #directory &lt;- paste0(getwd(), &quot;/Prova&quot;)
@@ -423,7 +425,7 @@ for (i in 1:partitions) {
   
   links_mini &lt;- links_to_download[(i*n_subset-(n_subset-1)):(i*n_subset),]
   
-  DADES &lt;- llegir.px.csv.i.metadades.fast.2(links_mini)
+  DADES &lt;- llegir.px.csv.i.metadades.fast(links_mini)
   
   # write(DADES$errors$error_lectura_px, paste0(&quot;error_lectura_px_&quot;, i, &quot;.txt&quot;))
   # write(DADES$errors$error_lectura_df, paste0(&quot;error_lectura_df_&quot;, i, &quot;.txt&quot;))
@@ -451,7 +453,7 @@ for (i in 1:partitions){
 }
 
 print(paste0(&quot;nrow: &quot;, nrow(unique(metadata_raw))))</code></pre>
-<pre><code>## [1] &quot;nrow: 13219&quot;</code></pre>
+<pre><code>## [1] &quot;nrow: 6827&quot;</code></pre>
 <pre class="r"><code>write.csv(metadata_raw, &quot;metadata_raw.csv&quot;, fileEncoding = &quot;UTF-8&quot;)</code></pre>
 <p>Al fitxer “metadata_raw.csv” hi ha la meta info de les basses de
 dades!</p>
@@ -501,6 +503,12 @@ all_metadata_links &lt;- metadata_links_clean
 
 all_metadata_links &lt;- rm.duplicated.data(all_metadata_links)
 
+all_metadata_links_date &lt;- reformat.date(all_metadata_links[, c(&quot;ID&quot; ,&quot;REFPERIOD.ca.&quot;)])</code></pre>
+<pre><code>## Warning in mask$eval_all_mutate(quo): NAs introducidos por coerción
+
+## Warning in mask$eval_all_mutate(quo): NAs introducidos por coerción</code></pre>
+<pre class="r"><code>all_metadata_links &lt;- full_join(all_metadata_links, all_metadata_links_date, by = &quot;ID&quot;)
+
 write.csv(all_metadata_links, &quot;all_metadata_links.csv&quot;, fileEncoding = &quot;UTF-8&quot;)</code></pre>
 <p>Mirar dif entre all_metadata_links i metadata_links_clean</p>
 <p>A metadata_links.csv hi ha un minifitxer amb lo més basic</p>
@@ -511,7 +519,7 @@ write.csv(all_metadata_links, &quot;all_metadata_links.csv&quot;, fileEncoding =
 #all_metadata_links &lt;- full_join(metadata_raw_2, metadata_links_clean, by=&quot;ID&quot;)
 #write.csv(all_metadata_links, &quot;all_metadata_links.csv&quot;, fileEncoding = &quot;UTF-8&quot;)
 
-key_var &lt;- c(&quot;Enllac&quot;, &quot;ID&quot;, &quot;CONTENTS&quot;, &quot;CONTENTS.ca.&quot;, &quot;CREATION.DATE&quot;, &quot;DESCRIPTION&quot;, &quot;DESCRIPTION.ca.&quot;, &quot;INFO&quot;, &quot;INFO.ca.&quot;, &quot;MATRIX&quot;, &quot;REFPERIOD&quot;, &quot;REFPERIOD.ca.&quot;, &quot;SUBJECT.AREA&quot; , &quot;SUBJECT.AREA.ca.&quot;, &quot;SUBJECT.CODE&quot;, &quot;SURVEY&quot;, &quot;SURVEY.ca.&quot;, &quot;TITLE&quot;, &quot;TITLE.ca.&quot;)
+key_var &lt;- c(&quot;Enllac&quot;, &quot;ID&quot;, &quot;CONTENTS&quot;, &quot;CONTENTS.ca.&quot;, &quot;CREATION.DATE&quot;, &quot;DESCRIPTION&quot;, &quot;DESCRIPTION.ca.&quot;, &quot;INFO&quot;, &quot;INFO.ca.&quot;, &quot;MATRIX&quot;, &quot;REFPERIOD&quot;, &quot;REFPERIOD.ca.&quot;, &quot;SUBJECT.AREA&quot; , &quot;SUBJECT.AREA.ca.&quot;, &quot;SUBJECT.CODE&quot;, &quot;SURVEY&quot;, &quot;SURVEY.ca.&quot;, &quot;TITLE&quot;, &quot;TITLE.ca.&quot;, &quot;REFPERIOD.start.&quot;, &quot;REFPERIOD.end.&quot;)
 
 write.csv(all_metadata_links[key_var], &quot;metadata_links.csv&quot;, fileEncoding = &quot;UTF-8&quot;)</code></pre>
 <p>A imp_metadata_links hi ha la info no trivial!</p>
@@ -558,7 +566,7 @@ write.csv(links_to_actualize, &quot;links_to_actualize.csv&quot;, fileEncoding =
 </div>
 <div id="falta-data-fecha" class="section level1">
 <h1><em>Falta data (fecha)</em></h1>
-<pre><code>## Time difference of 1.949871 hours</code></pre>
+<pre><code>## Time difference of 1.550512 hours</code></pre>
 </div>
 
 
