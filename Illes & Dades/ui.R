@@ -1,4 +1,34 @@
+
 library(shiny)
+library(tidyverse)
+library(pxR)
+library(rvest)
+library(plotly)
+library(DT)
+
+source("functions_grafic.R")
+source("functions_cleaning_date.R")
+
+# setwd(paste0(getwd(), "/Illes & Dades"))
+
+# des filtrat de BBDD:
+# filtrar per data (fecha) no va!
+
+metadata <- read_csv("https://raw.githubusercontent.com/JoanVii/IllesNDades/main/Illes%20%26%20Dades/imp_metadata_links.csv")
+# metadata <- read_csv("imp_metadata_links.csv", locale = locale(encoding = "UTF-8"))
+
+#metadata_cat <- read_csv("BBDD_web_05_01_2023.csv", locale = locale(encoding = "UTF-8"))
+metadata_cat<- metadata[, c("SUBJECT.AREA.ca.1", "SUBJECT.AREA.ca.2", "TITLE.ca.", "REFPERIOD.start.", "REFPERIOD.end.", "Nom_BBDD")]
+names(metadata_cat) <- c("Area", "Subarea", "Titol", "Inici periode", "Fi periode", "NomBBDD")
+
+vec_Area <- c(unique(metadata_cat[, "Area"]))[[1]]
+list_Area <- as.list(unique(metadata_cat[, "Area"]))[[1]]
+names(list_Area) <- vec_Area
+selec_Area <- list_Area
+
+source("functions_grafic.R")
+source("functions_cleaning_date.R")
+
 
 shinyUI(
   navbarPage(
@@ -39,7 +69,7 @@ shinyUI(
     
     tabPanel(
       ###
-      "Grafic",
+      "Dades!!",
       
       h4("Com usar el web:"),
       p("1. Anar a la secció de 'Selecció base de dades', escollir una base de dades i clicar-hi a sobre (S'ha de posar d'un color més fosc)."),

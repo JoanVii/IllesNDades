@@ -5,7 +5,9 @@ account: joanvi
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 8380332
-bundleId: 6873855
+bundleId: 6873932
 url: https://joanvi.shinyapps.io/shiny/
-when: 1677059530.43325
-lastSyncTime: 1677059530.43325
+when: 1677061007.25516
+lastSyncTime: 1677061007.25516
+asMultiple: FALSE
+asStatic: FALSE

@@ -13,7 +13,7 @@
 
 <meta name="date" content="2023-02-23" />
 
-<title>Create BBDD</title>
+<title>Web scraping</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -352,222 +352,43 @@ display: none;
 
 
 
-<h1 class="title toc-ignore">Create BBDD</h1>
+<h1 class="title toc-ignore">Web scraping</h1>
 <h4 class="author">Illes &amp; Dades</h4>
 <h4 class="date">2023-02-23</h4>
 
 </div>
 
 
-<div id="prerequisits" class="section level1">
-<h1>Prerequisits</h1>
-<div id="paquets-necessaris" class="section level2">
-<h2>Paquets necessaris</h2>
-<pre class="r"><code>library(&quot;rvest&quot;)
-library(&quot;stringr&quot;)
-library(&quot;tidyverse&quot;)
-library(&quot;pxR&quot;)
+<pre class="r"><code>library(readr)
+library(stringr)
+library(rvest)
+library(tibble)
 
-# source(&quot;functions_metadades.R&quot;) 
-#source(&quot;Functions/llegir_px_csv_i_metadades_fast.R&quot;)
-source(&quot;Functions/llegir_px_csv_i_metadades_fast.R&quot;)
-source(&quot;Functions/rm_duplicated_data.R&quot;)
-source(&quot;Functions/reformate_date.R&quot;)
+source(&quot;Functions/read_ibestat_links.R&quot;)
 
-
-
-#directory &lt;- paste0(getwd(), &quot;/Prova&quot;)
 directory &lt;- getwd()</code></pre>
-</div>
-<div id="web-scraping-a-la-pagina-web-de-libestat" class="section level2">
-<h2>Web Scraping a la pagina web de l’IBESTAT</h2>
-<p>Per començar, cal trobar tots els links de descarrega de les bases de
-dades. Per fer-ho fet web scraping a la pàgina de l’ibestat manyalment i
-després s’usa el paquet <em>rvest</em>. S’agafa el codi de la pagina, es
-selecciona tots els links que contenen els fitxer .px i es preparen els
-links per que es puguin descarregar fàcilment. Això ho he fet al fitxer
-<em>web_scraping.R</em> i he creat un arxiu CSV anomenat
-links_to_download.</p>
-<pre class="r"><code># fet a 0_web_scraping.Rmd</code></pre>
-<p>Cream un arxiu csv que conté el links i el nom de la bbdd. Aquest
-fitxer es diu <strong>links_to_download.csv</strong></p>
-<pre class="r"><code>links_to_download &lt;- read.csv(&quot;Data/links_to_download.csv&quot;, fileEncoding = &quot;UTF-8&quot;)
+<p>In IBestat.txt there are multiple links obtained by “manual” web
+scraping. To obtain all the links to data sets we have to use the
+function read.ibesat.links that create a data frame whit them. This will
+save all links ended like “.px” a kind of archive that store data and
+metadata and the name of the data set.</p>
+<pre class="r"><code># a IBestat.txt hi ha els links on hi ha mes links per descarregar les bbdd.
+links_ibestat &lt;- read_csv(&quot;Data/IBestat.txt&quot;)
+links_ibestat &lt;- links_ibestat[str_detect(links_ibestat$&quot;Links:&quot;, &quot;https&quot;), ]
+links_ibestat &lt;- as.data.frame(links_ibestat)
 
-# canvis de noms de variables i mes:
-# links_to_download &lt;- links_descarregar
-# directory &lt;- directori
-# metadata_### &lt;- doc_metadata_####
-# key_var &lt;- var_distintives
-# metadata_links_2 &lt;- metadata_links_clean
-# metadata_raw &lt;- metadata_util
-# NEW imp_metadata_links
+# funció de lectura dels links, hi hem d&#39;introduir unicament els links en format df
 
-links_to_download[ ,1] &lt;- paste0(&quot;ID_&quot;, seq(1:nrow(links_to_download)))
-
-names(links_to_download) &lt;- c(&quot;ID&quot;, &quot;Titol_cat&quot;, &quot;Enllac&quot;, &quot;Nom_BBDD&quot;)</code></pre>
-<p><strong><em>CODI PER NO HAVER DE COMPILAR PER LES 22280 bbdd sinó per
-n</em></strong></p>
-<pre class="r"><code>nrow(links_to_download)</code></pre>
-<pre><code>## [1] 22965</code></pre>
-</div>
-</div>
-<div id="maneig-de-la-bbdd" class="section level1">
-<h1>Maneig de la BBDD:</h1>
-<div id="obternir-metainformació" class="section level2">
-<h2>Obternir metainformació</h2>
-<pre class="r"><code>setwd(paste0(directory, &quot;/Data/&quot;))
-
-n_subset &lt;- 10000
-partitions &lt;- ceiling(nrow(links_to_download)/n_subset)
-
-# reading the metadata from multiple DDBB, do it whit partitions cause it&#39;s easier to debug
-for (i in 1:partitions) {
-  
-  links_mini &lt;- links_to_download[(i*n_subset-(n_subset-1)):(i*n_subset),]
-  
-  DADES &lt;- llegir.px.csv.i.metadades.fast(links_mini)
-  
-  # write(DADES$errors$error_lectura_px, paste0(&quot;error_lectura_px_&quot;, i, &quot;.txt&quot;))
-  # write(DADES$errors$error_lectura_df, paste0(&quot;error_lectura_df_&quot;, i, &quot;.txt&quot;))
-  
-  write.csv(DADES$doc_metadata_util, paste0(&quot;metadata_raw_&quot;, i, &quot;.csv&quot;), fileEncoding = &quot;UTF-8&quot;)
-  # print(paste0(&quot;Feta la partició: &quot;, i))
-}
-
-metadata_raw &lt;- tibble(read.csv(paste0(&quot;metadata_raw_1.csv&quot;), fileEncoding = &quot;UTF-8&quot;))
-
-if(partitions&gt;1){
-  for (i in 2:partitions) {
-    metadata_raw &lt;- tibble( 
-      merge(
-        metadata_raw,
-        read.csv(paste0(&quot;metadata_raw_&quot;, i, &quot;.csv&quot;), fileEncoding = &quot;UTF-8&quot;),
-        all = TRUE
-      )
-    )
-  }
-}
-
-for (i in 1:partitions){
-  file.remove(paste0(&quot;metadata_raw_&quot;, i, &quot;.csv&quot;))
-}
-
-print(paste0(&quot;nrow: &quot;, nrow(unique(metadata_raw))))</code></pre>
-<pre><code>## [1] &quot;nrow: 18953&quot;</code></pre>
-<pre class="r"><code>write.csv(metadata_raw, &quot;metadata_raw.csv&quot;, fileEncoding = &quot;UTF-8&quot;)</code></pre>
-<p>Al fitxer “metadata_raw.csv” hi ha la meta info de les basses de
-dades!</p>
-</div>
-<div id="natejar-bbdd-eliminar-na-fer-ho-llegible-i-millorar-la-separació-per-categories." class="section level2">
-<h2>Natejar BBDD: eliminar NA, fer-ho llegible i millorar la separació
-per categories.</h2>
-<p>L’arxiu metadata_links_clean, són les metadades amb el link de
-descarrega i ja s’han llevat caràcters inutils</p>
-<pre class="r"><code>setwd(paste0(directory, &quot;/Data/&quot;))
-
-names(links_to_download) &lt;- c(&quot;ID&quot;, &quot;Titol_cat&quot;, &quot;Enllac&quot;, &quot;Nom_BBDD&quot; )
-
-metadata_links_clean  &lt;- full_join(links_to_download, metadata_raw[,-1], by=&quot;ID&quot;)
-
-metadata_links_clean &lt;- metadata_links_clean[, !colnames(metadata_links_clean) %in% &quot;Noms_dades&quot;]
-metadata_links_clean &lt;- metadata_links_clean[!is.na(metadata_links_clean$MATRIX),]
-
-metadata_links_clean &lt;- metadata_links_clean %&gt;% mutate_all(~gsub(&#39;&quot;\n&quot;&#39;, &#39;&#39;, .))
-metadata_links_clean &lt;- metadata_links_clean %&gt;% mutate_all(~gsub(&#39;&quot;,&quot;&#39;, &#39;, &#39;, .))
-
-metadata_links_clean_parcial &lt;- metadata_links_clean[,&quot;ID&quot;]
-metadata_links_clean_parcial &lt;- as.data.frame(metadata_links_clean_parcial)
-
-for (i in 1:nrow(metadata_links_clean)) {
-  parte &lt;- str_split(metadata_links_clean[i , &quot;SUBJECT.AREA&quot;], &quot; &gt; &quot;)
-  metadata_links_clean_parcial[i, 2] &lt;- parte[[1]][1]
-  metadata_links_clean_parcial[i, 3] &lt;- parte[[1]][2]
-  
-  part &lt;- str_split(metadata_links_clean[i , &quot;SUBJECT.AREA.ca.&quot;], &quot; &gt; &quot;)
-  metadata_links_clean_parcial[i, 4] &lt;- part[[1]][1]
-  metadata_links_clean_parcial[i, 5] &lt;- part[[1]][2]
-  
-  nombre &lt;- str_split(as.character(metadata_links_clean[i , &quot;SUBJECT.CODE&quot;]), &#39;\\.&#39;)
-  metadata_links_clean_parcial[i, 6] &lt;- nombre[[1]][1]
-  metadata_links_clean_parcial[i, 7] &lt;- nombre[[1]][2]
-}
-
-joining_names &lt;- colnames(metadata_links_clean)
-joining_names &lt;- joining_names[-c(1, 2, 3, 4)]
-
-names(metadata_links_clean_parcial) &lt;- c(&quot;ID&quot;, &quot;SUBJECT.AREA.1&quot;, &quot;SUBJECT.AREA.2&quot;, &quot;SUBJECT.AREA.ca.1&quot;, &quot;SUBJECT.AREA.ca.2&quot;, &quot;SUBJECT.CODE.1&quot;, &quot;SUBJECT.CODE.2&quot;)
-
-metadata_links_clean &lt;- full_join(metadata_links_clean, metadata_links_clean_parcial, by=&quot;ID&quot;)
-
-all_metadata_links &lt;- metadata_links_clean
-
-all_metadata_links &lt;- rm.duplicated.data(all_metadata_links)
-
-all_metadata_links_date &lt;- reformat.date(all_metadata_links[, c(&quot;ID&quot; ,&quot;REFPERIOD.ca.&quot;)])</code></pre>
-<pre><code>## Warning in mask$eval_all_mutate(quo): NAs introducidos por coerción
-
-## Warning in mask$eval_all_mutate(quo): NAs introducidos por coerción</code></pre>
-<pre class="r"><code>all_metadata_links &lt;- full_join(all_metadata_links, all_metadata_links_date, by = &quot;ID&quot;)
-
-write.csv(all_metadata_links, &quot;all_metadata_links.csv&quot;, fileEncoding = &quot;UTF-8&quot;)</code></pre>
-<p>Mirar dif entre all_metadata_links i metadata_links_clean</p>
-<p>A metadata_links.csv hi ha un minifitxer amb lo més basic</p>
-<pre class="r"><code>setwd(paste0(directory, &quot;/Data/&quot;))
-
-#metadata_raw_2 &lt;- select(metadata_raw, -joining_names)
-#
-#all_metadata_links &lt;- full_join(metadata_raw_2, metadata_links_clean, by=&quot;ID&quot;)
-#write.csv(all_metadata_links, &quot;all_metadata_links.csv&quot;, fileEncoding = &quot;UTF-8&quot;)
-
-key_var &lt;- c(&quot;Enllac&quot;, &quot;ID&quot;, &quot;CONTENTS&quot;, &quot;CONTENTS.ca.&quot;, &quot;CREATION.DATE&quot;, &quot;DESCRIPTION&quot;, &quot;DESCRIPTION.ca.&quot;, &quot;INFO&quot;, &quot;INFO.ca.&quot;, &quot;MATRIX&quot;, &quot;REFPERIOD&quot;, &quot;REFPERIOD.ca.&quot;, &quot;SUBJECT.AREA&quot; , &quot;SUBJECT.AREA.ca.&quot;, &quot;SUBJECT.CODE&quot;, &quot;SURVEY&quot;, &quot;SURVEY.ca.&quot;, &quot;TITLE&quot;, &quot;TITLE.ca.&quot;, &quot;REFPERIOD.start.&quot;, &quot;REFPERIOD.end.&quot;)
-
-write.csv(all_metadata_links[key_var], &quot;metadata_links.csv&quot;, fileEncoding = &quot;UTF-8&quot;)</code></pre>
-<p>A imp_metadata_links hi ha la info no trivial!</p>
-<pre class="r"><code>setwd(paste0(directory, &quot;/Data/&quot;))
-
-col_names &lt;- colnames(all_metadata_links)
-
-### no info
-delete &lt;- c(&quot;X&quot;, &quot;AGGREGALLOWED&quot;, &quot;AUTOPEN&quot;, &quot;AXIS.VERSION&quot;, &quot;CHARSET&quot;, &quot;COPYRIGHT&quot;,
-            &quot;DESCRIPTIONDEFAULT&quot;, &quot;CONTVARIABLE&quot;, &quot;CONTVARIABLE.ca.&quot;, &quot;LANGUAGE&quot;, &quot;LANGUAGES&quot;)
-
-### trivial info
-maybe_delete &lt;- c(&quot;CODES&quot;, &quot;CODES.ca.&quot;, &quot;MAP&quot;, &quot;MAP.ca.&quot;, &quot;PRECISION&quot;, &quot;PRECISION.ca.&quot;, &quot;CONTACT&quot;, &quot;CONTACT.ca.&quot;)
-###
-
-col_names &lt;- setdiff(col_names, delete)
-col_names &lt;- setdiff(col_names, maybe_delete)
+links_to_download &lt;- read.ibestat.links(links_ibestat)
 
 
-# for(i in 1:length(col_names)){
-#   print(paste0(&quot;Nom columna :&quot;, col_names[i]))
-#   unique_data &lt;- unique(dades[col_names[i]])
-#   num_data &lt;- nrow(unique_data)
-#   print(paste0(&quot;Hi ha &quot;, num_data, &quot; dades uniques a la columna&quot;))
-#   #print(head(unique(dades[col_names[i]]), 10))
-# }
-
-
-imp_metadata_links &lt;- all_metadata_links[col_names]
-
-write.csv(imp_metadata_links,&quot;imp_metadata_links.csv&quot;, fileEncoding = &quot;UTF-8&quot;)</code></pre>
-<p>links_to_actualize Hi ha els links per actualitzar</p>
-<pre class="r"><code>setwd(paste0(directory, &quot;/Data/&quot;))
-
-links_to_actualize &lt;- imp_metadata_links[imp_metadata_links$&quot;UPDATE.FREQUENCY&quot; != &quot;No se actualiza&quot; &amp;
-                                           !is.na(imp_metadata_links$&quot;UPDATE.FREQUENCY&quot;), ]
-
-links_to_actualize &lt;- links_to_actualize[c(&quot;ID&quot;, &quot;Titol_cat&quot;, &quot;Enllac&quot;, &quot;Nom_BBDD&quot;)] # eliminat noms_dades?
-#names(links_to_actualize) &lt;- c(&quot;ID&quot;,&quot;Titol_cat&quot;, &quot;Enllac&quot;, &quot;Nom_BBDD&quot;)
-
-
-write.csv(links_to_actualize, &quot;links_to_actualize.csv&quot;, fileEncoding = &quot;UTF-8&quot;)</code></pre>
-</div>
-</div>
-<div id="falta-data-fecha" class="section level1">
-<h1><em>Falta data (fecha)</em></h1>
-<pre><code>## Time difference of 3.460716 hours</code></pre>
-</div>
+write.csv(
+  links_to_download,
+  paste0(directory, &quot;/Data/links_to_download.csv&quot;),
+  fileEncoding = &quot;UTF-8&quot;
+)</code></pre>
+<p>Time to execute this code:</p>
+<pre><code>## Time difference of 5.886896 mins</code></pre>
 
 
 
